@@ -14,21 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Shadows } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
-import { 
-  Zap, 
-  TrendingUp, 
-  TrendingDown,
-  Fire,
-  Target,
-  DollarSign,
-  Clock,
-  Users,
-  Star,
-  Plus,
-  X,
-  AlertTriangle,
-  Rocket
-} from 'lucide-react-native';
+import { Zap, TrendingUp, TrendingDown, Siren as Fire, Target, DollarSign, Clock, Users, Star, Plus, X, TriangleAlert as AlertTriangle, Rocket } from 'lucide-react-native';
 
 interface YOLOInvestment {
   id: string;
