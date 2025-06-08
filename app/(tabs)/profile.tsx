@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Shadows } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
-import { User, Settings, Bell, Lock, CircleHelp as HelpCircle, LogOut, ChevronRight, Shield, Smartphone, Eye, Target, Award, TrendingUp } from 'lucide-react-native';
+import { User, Settings, Bell, Lock, CircleHelp as HelpCircle, LogOut, ChevronRight, Shield, Smartphone, Eye, Target, Award, TrendingUp, BookOpen, GraduationCap } from 'lucide-react-native';
 
 interface ProfileStats {
   goalsCompleted: number;
@@ -76,6 +76,14 @@ export default function ProfileScreen() {
   ];
 
   const navigationItems: SettingItem[] = [
+    {
+      id: 'learn',
+      title: 'Learning Hub 🧠',
+      subtitle: 'Level up your money IQ with courses and tips',
+      icon: <BookOpen size={20} color={Colors.primary} />,
+      type: 'navigation',
+      onPress: () => Alert.alert('Learning Hub', 'Navigate to learning modules, courses, and financial education content!'),
+    },
     {
       id: 'risk-profile',
       title: 'Update Risk Profile',
@@ -156,6 +164,38 @@ export default function ProfileScreen() {
             </View>
           </View>
         </LinearGradient>
+
+        {/* Learning Progress Card */}
+        <View style={styles.learningCard}>
+          <View style={styles.learningHeader}>
+            <GraduationCap size={24} color={Colors.primary} />
+            <Text style={styles.learningTitle}>Learning Progress 🎓</Text>
+          </View>
+          <Text style={styles.learningDescription}>
+            Keep building your financial knowledge! You're doing great.
+          </Text>
+          <View style={styles.learningStats}>
+            <View style={styles.learningStat}>
+              <Text style={styles.learningStatNumber}>3</Text>
+              <Text style={styles.learningStatLabel}>Modules Completed</Text>
+            </View>
+            <View style={styles.learningStat}>
+              <Text style={styles.learningStatNumber}>12</Text>
+              <Text style={styles.learningStatLabel}>Day Streak</Text>
+            </View>
+            <View style={styles.learningStat}>
+              <Text style={styles.learningStatNumber}>450</Text>
+              <Text style={styles.learningStatLabel}>XP Earned</Text>
+            </View>
+          </View>
+          <TouchableOpacity 
+            style={styles.learningButton}
+            onPress={() => Alert.alert('Learning Hub', 'Navigate to learning modules, courses, and financial education content!')}
+          >
+            <BookOpen size={16} color={Colors.surface} />
+            <Text style={styles.learningButtonText}>Continue Learning</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Stats Grid */}
         <View style={styles.statsContainer}>
@@ -348,6 +388,61 @@ const styles = StyleSheet.create({
     ...Typography.captionMedium,
     color: Colors.surface,
     marginLeft: 6,
+  },
+  learningCard: {
+    backgroundColor: Colors.surface,
+    marginHorizontal: 24,
+    marginBottom: 24,
+    padding: 20,
+    borderRadius: 16,
+    ...Shadows.medium,
+  },
+  learningHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  learningTitle: {
+    ...Typography.bodySemiBold,
+    color: Colors.textDark,
+    marginLeft: 8,
+  },
+  learningDescription: {
+    ...Typography.caption,
+    color: Colors.textMuted,
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  learningStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  learningStat: {
+    alignItems: 'center',
+  },
+  learningStatNumber: {
+    ...Typography.h3,
+    color: Colors.primary,
+  },
+  learningStatLabel: {
+    ...Typography.small,
+    color: Colors.textMuted,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  learningButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.primary,
+    paddingVertical: 12,
+    borderRadius: 12,
+    gap: 8,
+  },
+  learningButtonText: {
+    ...Typography.bodySemiBold,
+    color: Colors.surface,
   },
   statsContainer: {
     paddingHorizontal: 24,

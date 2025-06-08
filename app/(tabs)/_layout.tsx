@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Colors } from '@/constants/Colors';
-import { Chrome as Home, Target, BookOpen, TrendingUp, User } from 'lucide-react-native';
+import { Chrome as Home, Target, Zap, TrendingUp, User } from 'lucide-react-native';
 
 export default function TabLayout() {
   return (
@@ -41,11 +41,11 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="learn"
+        name="yolovest"
         options={{
-          title: 'Learn',
+          title: 'YOLOVest',
           tabBarIcon: ({ size, color }) => (
-            <BookOpen size={size} color={color} />
+            <Zap size={size} color={color} />
           ),
         }}
       />
