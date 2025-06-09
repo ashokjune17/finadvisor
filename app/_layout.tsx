@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Platform } from 'react-native';
 import { useFonts } from 'expo-font';
 import {
   Inter_400Regular,
@@ -13,19 +12,10 @@ import {
   Poppins_600SemiBold,
   Poppins_700Bold,
 } from '@expo-google-fonts/poppins';
-import * as SplashScreen from 'expo-splash-screen';
+import { SplashScreen } from 'expo-router';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 
-// Prevent auto-hide with proper error handling and platform checks
-(async () => {
-  try {
-    if (Platform.OS !== 'web' && SplashScreen && typeof SplashScreen.preventAutoHideAsync === 'function') {
-      await SplashScreen.preventAutoHideAsync();
-    }
-  } catch (error) {
-    console.warn('Failed to prevent splash screen auto-hide:', error);
-  }
-})();
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   useFrameworkReady();
@@ -41,11 +31,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
-      if (Platform.OS !== 'web' && SplashScreen && typeof SplashScreen.hideAsync === 'function') {
-        SplashScreen.hideAsync().catch((error) => {
-          console.warn('Failed to hide splash screen:', error);
-        });
-      }
+      SplashScreen.hideAsync();
     }
   }, [fontsLoaded, fontError]);
 
