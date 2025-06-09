@@ -15,10 +15,12 @@ import {
 import { SplashScreen } from 'expo-router';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 
-// Prevent auto-hide with proper error handling
+// Prevent auto-hide with proper error handling and existence checks
 (async () => {
   try {
-    await SplashScreen.preventAutoHideAsync();
+    if (SplashScreen && typeof SplashScreen.preventAutoHideAsync === 'function') {
+      await SplashScreen.preventAutoHideAsync();
+    }
   } catch (error) {
     console.warn('Failed to prevent splash screen auto-hide:', error);
   }
@@ -38,9 +40,11 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync().catch((error) => {
-        console.warn('Failed to hide splash screen:', error);
-      });
+      if (SplashScreen && typeof SplashScreen.hideAsync === 'function') {
+        SplashScreen.hideAsync().catch((error) => {
+          console.warn('Failed to hide splash screen:', error);
+        });
+      }
     }
   }, [fontsLoaded, fontError]);
 
