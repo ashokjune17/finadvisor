@@ -240,7 +240,7 @@ export default function OnboardingScreen() {
 
   const addBotMessage = (content: string, options?: string[]) => {
     const newMessage: ChatMessage = {
-      id: Date.now().toString(),
+      id: `bot-${Date.now()}-${Math.random()}`,
       type: 'bot',
       content,
       options,
@@ -250,7 +250,7 @@ export default function OnboardingScreen() {
 
   const addUserMessage = (content: string) => {
     const newMessage: ChatMessage = {
-      id: Date.now().toString(),
+      id: `user-${Date.now()}-${Math.random()}`,
       type: 'user',
       content,
     };
@@ -423,7 +423,7 @@ export default function OnboardingScreen() {
             contentContainerStyle={styles.chatContent}
             showsVerticalScrollIndicator={false}
           >
-            {messages.map((message, index) => (
+            {messages.map((message) => (
               <Animated.View
                 key={message.id}
                 style={[
@@ -446,7 +446,7 @@ export default function OnboardingScreen() {
               <View style={styles.optionsContainer}>
                 {currentFlow.options.map((option, index) => (
                   <TouchableOpacity
-                    key={index}
+                    key={`option-${currentStep}-${index}-${option}`}
                     style={[
                       styles.optionChip,
                       isMultiSelect && userData.goals.includes(option) && styles.selectedChip
