@@ -16,7 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Colors, Shadows } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
-import { ChevronRight, Target, DollarSign, TrendingUp, Smartphone, Shield } from 'lucide-react-native';
+import { ChevronRight, Target, DollarSign, TrendingUp, Smartphone } from 'lucide-react-native';
 
 interface ChatMessage {
   id: string;
@@ -39,11 +39,6 @@ export default function OnboardingScreen() {
   const [currentStep, setCurrentStep] = useState(0);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [textInput, setTextInput] = useState('');
-  const [otpInput, setOtpInput] = useState('');
-  const [generatedOtp, setGeneratedOtp] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpVerified, setOtpVerified] = useState(false);
-  const [resendTimer, setResendTimer] = useState(0);
   const [userData, setUserData] = useState<UserData>({
     name: '',
     age: '',
@@ -62,15 +57,9 @@ export default function OnboardingScreen() {
     },
     {
       id: 'mobile',
-      message: "Let's secure your account! What's your mobile number? 📱",
+      message: "Let's get started! What's your mobile number? 📱",
       type: 'mobile',
       placeholder: 'Enter your mobile number...',
-    },
-    {
-      id: 'otp',
-      message: "Perfect! I've sent a verification code to your number. Enter it below to continue 🔐",
-      type: 'otp',
-      placeholder: 'Enter 6-digit OTP...',
     },
     {
       id: 'name',
@@ -155,17 +144,6 @@ export default function OnboardingScreen() {
     }).start();
   }, [messages]);
 
-  // Timer for OTP resend
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (resendTimer > 0) {
-      interval = setInterval(() => {
-        setResendTimer(prev => prev - 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [resendTimer]);
-
   const addBotMessage = (content: string, options?: string[]) => {
     const newMessage: ChatMessage = {
       id: `bot-${Date.now()}-${Math.random()}`,
@@ -183,39 +161,6 @@ export default function OnboardingScreen() {
       content,
     };
     setMessages(prev => [...prev, newMessage]);
-  };
-
-  const generateOtp = () => {
-    return Math.floor(100000 + Math.random() * 900000).toString();
-  };
-
-  const sendOtp = () => {
-    const otp = generateOtp();
-    setGeneratedOtp(otp);
-    setOtpSent(true);
-    setResendTimer(30);
-    
-    // In a real app, you would send this OTP via SMS
-    // For demo purposes, we'll show it in an alert
-    Alert.alert('OTP Sent', `Your verification code is: ${otp}\n\n(In production, this would be sent via SMS)`, [
-      { text: 'OK' }
-    ]);
-  };
-
-  const verifyOtp = () => {
-    if (otpInput === generatedOtp) {
-      setOtpVerified(true);
-      addUserMessage(`✅ Verified: ${otpInput}`);
-      addBotMessage("Great! Your number is verified. Let's continue! 🎉");
-      
-      setTimeout(() => {
-        setCurrentStep(prev => prev + 1);
-        const nextFlow = onboardingFlow[currentStep + 1];
-        addBotMessage(nextFlow.message, nextFlow.options);
-      }, 1500);
-    } else {
-      Alert.alert('Invalid OTP', 'Please enter the correct verification code.');
-    }
   };
 
   const handleOptionSelect = (option: string) => {
@@ -304,27 +249,12 @@ export default function OnboardingScreen() {
     setUserData(prev => ({ ...prev, mobile: textInput }));
     setTextInput('');
     
+    // Move directly to next step without OTP verification
     setTimeout(() => {
-      sendOtp();
       setCurrentStep(prev => prev + 1);
       const nextFlow = onboardingFlow[currentStep + 1];
-      addBotMessage(nextFlow.message);
+      addBotMessage(nextFlow.message, nextFlow.options);
     }, 1000);
-  };
-
-  const handleOtpSubmit = () => {
-    if (otpInput.length !== 6) {
-      Alert.alert('Invalid OTP', 'Please enter a 6-digit verification code');
-      return;
-    }
-    verifyOtp();
-  };
-
-  const handleResendOtp = () => {
-    if (resendTimer === 0) {
-      sendOtp();
-      setOtpInput('');
-    }
   };
 
   const handleGoalsDone = () => {
@@ -340,7 +270,6 @@ export default function OnboardingScreen() {
   const currentFlow = onboardingFlow[currentStep];
   const isTextInput = currentFlow?.type === 'input';
   const isMobileInput = currentFlow?.type === 'mobile';
-  const isOtpInput = currentFlow?.type === 'otp';
   const isIncomeInput = currentFlow?.type === 'income';
   const isMultiSelect = currentFlow?.multiSelect;
 
@@ -496,42 +425,6 @@ export default function OnboardingScreen() {
               </TouchableOpacity>
             </View>
           )}
-
-          {/* OTP input */}
-          {isOtpInput && (
-            <View style={styles.otpContainer}>
-              <View style={styles.otpInputContainer}>
-                <Shield size={20} color={Colors.textMuted} />
-                <TextInput
-                  value={otpInput}
-                  onChangeText={setOtpInput}
-                  placeholder="Enter 6-digit OTP"
-                  style={styles.otpInput}
-                  onSubmitEditing={handleOtpSubmit}
-                  returnKeyType="send"
-                  keyboardType="number-pad"
-                  placeholderTextColor={Colors.textMuted}
-                  maxLength={6}
-                />
-                <TouchableOpacity
-                  style={styles.verifyButton}
-                  onPress={handleOtpSubmit}
-                >
-                  <Text style={styles.verifyButtonText}>Verify</Text>
-                </TouchableOpacity>
-              </View>
-              
-              <TouchableOpacity
-                style={[styles.resendButton, resendTimer > 0 && styles.disabledButton]}
-                onPress={handleResendOtp}
-                disabled={resendTimer > 0}
-              >
-                <Text style={[styles.resendButtonText, resendTimer > 0 && styles.disabledText]}>
-                  {resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend OTP'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
         </KeyboardAvoidingView>
       </LinearGradient>
     </SafeAreaView>
@@ -679,52 +572,5 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  otpContainer: {
-    paddingHorizontal: 24,
-    paddingBottom: 24,
-    gap: 16,
-  },
-  otpInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 20,
-    gap: 8,
-  },
-  otpInput: {
-    flex: 1,
-    ...Typography.body,
-    color: Colors.textDark,
-    textAlign: 'center',
-    letterSpacing: 2,
-  },
-  verifyButton: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 12,
-  },
-  verifyButtonText: {
-    ...Typography.captionMedium,
-    color: Colors.surface,
-  },
-  resendButton: {
-    alignSelf: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  resendButtonText: {
-    ...Typography.captionMedium,
-    color: Colors.surface,
-    textDecorationLine: 'underline',
-  },
-  disabledButton: {
-    opacity: 0.5,
-  },
-  disabledText: {
-    textDecorationLine: 'none',
   },
 });
