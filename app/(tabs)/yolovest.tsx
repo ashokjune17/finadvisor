@@ -303,7 +303,7 @@ export default function YOLOVestScreen() {
                 disabled={!textInput.trim() || loading}
               >
                 {loading ? (
-                  <ActivityIndicator size="small" color={Colors.surface} />
+                  <ActivityIndicator size="small\" color={Colors.surface} />
                 ) : (
                   <Send size={20} color={Colors.surface} />
                 )}
