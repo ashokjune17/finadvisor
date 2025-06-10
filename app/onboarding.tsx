@@ -86,13 +86,9 @@ export default function OnboardingScreen() {
     }, 
     {
       id: 'income',
-      message: "Last question! What's your monthly income range? (This stays private, obvs 🔒)",
-      options: [
-        "Under ₹25K 💫",
-        "₹25K - ₹50K 💼",
-        "₹50K - ₹1L 🌟",
-        "Above ₹1L 🚀",
-      ],
+      message: "Last question! What's your monthly income? (This stays private, obvs 🔒)",
+      type: 'income',
+      placeholder: 'Enter your monthly income in ₹...',
     },
     {
       id: 'risk',
@@ -139,61 +135,6 @@ export default function OnboardingScreen() {
         "Maximize returns 💰",
       ],
     },
-    // {
-    //   id: 'risk_5',
-    //   message: "How long can you stay invested without needing this money?",
-    //   options: [
-    //     "Less than 1 year ⏱️",
-    //     "1–3 years 🧭",
-    //     "5+ years 🌱",
-    //   ],
-    // },
-    // {
-    //   id: 'risk_6',
-    //   message: "Do you track or follow stock market news or finance influencers?",
-    //   options: [
-    //     "Not at all 🙈",
-    //     "Sometimes on Instagram/Twitter 📱",
-    //     "Yes, I read/watch regularly 📊",
-    //   ],
-    // },
-    // {
-    //   id: 'risk_7',
-    //   message: "What percentage of your income are you comfortable investing monthly?",
-    //   options: [
-    //     "<10% 🧃",
-    //     "10–30% ☕",
-    //     "30% 🔋",
-    //   ],
-    // },
-    // {
-    //   id: 'risk_8',
-    //   message: "Would you try crypto or startup investing?",
-    //   options: [
-    //     "No way! Too risky 😵",
-    //     "Maybe a small amount 💡",
-    //     "Yes! I love high-risk, high-reward bets 🔥",
-    //   ],
-    // },
-    // {
-    //   id: 'risk_9',
-    //   message: "What kind of investments have you made so far?",
-    //   options: [
-    //     "Not at all 🙈",
-    //     "FDs, LICs, RDs only",
-    //     "Mutual Funds or Gold",
-    //     "Stocks, Crypto, Startups",
-    //   ],
-    // },
-    // {
-    //   id: 'risk_10',
-    //   message: "If your friend made big money from a risky investment, what would you do?",
-    //   options: [
-    //     "Stay calm, not my style 😇",
-    //     "Feel tempted but cautious 🤔",
-    //     "Jump in, FOMO is real 🤑", 
-    //   ],
-    // },
     {
       id: 'complete',
       message: "Amazing! 🎉 I'm creating your personalized financial plan. Ready to see what your money can do?",
@@ -293,8 +234,6 @@ export default function OnboardingScreen() {
       return;
     } else if (currentFlow.id === 'risk') {
       setUserData(prev => ({ ...prev, riskTolerance: option }));
-    } else if (currentFlow.id === 'income') {
-      setUserData(prev => ({ ...prev, income: option }));
     }
     
     // Move to next step
@@ -324,6 +263,26 @@ export default function OnboardingScreen() {
       setUserData(prev => ({ ...prev, age: textInput }));
     }
     
+    setTextInput('');
+    
+    setTimeout(() => {
+      if (currentStep < onboardingFlow.length - 1) {
+        setCurrentStep(prev => prev + 1);
+        const nextFlow = onboardingFlow[currentStep + 1];
+        addBotMessage(nextFlow.message, nextFlow.options);
+      }
+    }, 1000);
+  };
+
+  const handleIncomeSubmit = () => {
+    if (!textInput.trim() || isNaN(Number(textInput)) || Number(textInput) <= 0) {
+      Alert.alert('Invalid Income', 'Please enter a valid income amount');
+      return;
+    }
+    
+    const formattedIncome = `₹${Number(textInput).toLocaleString('en-IN')}`;
+    addUserMessage(formattedIncome);
+    setUserData(prev => ({ ...prev, income: textInput }));
     setTextInput('');
     
     setTimeout(() => {
@@ -382,6 +341,7 @@ export default function OnboardingScreen() {
   const isTextInput = currentFlow?.type === 'input';
   const isMobileInput = currentFlow?.type === 'mobile';
   const isOtpInput = currentFlow?.type === 'otp';
+  const isIncomeInput = currentFlow?.type === 'income';
   const isMultiSelect = currentFlow?.multiSelect;
 
   return (
@@ -502,6 +462,35 @@ export default function OnboardingScreen() {
               <TouchableOpacity
                 style={styles.sendButton}
                 onPress={handleMobileSubmit}
+              >
+                <ChevronRight size={20} color={Colors.surface} />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Income input */}
+          {isIncomeInput && (
+            <View style={styles.inputContainer}>
+              <View style={styles.incomeInputContainer}>
+                <DollarSign size={20} color={Colors.textMuted} />
+                <TextInput
+                  value={textInput}
+                  onChangeText={(text) => {
+                    // Only allow numbers
+                    const numericText = text.replace(/[^0-9]/g, '');
+                    setTextInput(numericText);
+                  }}
+                  placeholder={currentFlow.placeholder}
+                  style={styles.incomeInput}
+                  onSubmitEditing={handleIncomeSubmit}
+                  returnKeyType="send"
+                  keyboardType="numeric"
+                  placeholderTextColor={Colors.textMuted}
+                />
+              </View>
+              <TouchableOpacity
+                style={styles.sendButton}
+                onPress={handleIncomeSubmit}
               >
                 <ChevronRight size={20} color={Colors.surface} />
               </TouchableOpacity>
@@ -664,6 +653,21 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   mobileInput: {
+    flex: 1,
+    ...Typography.body,
+    color: Colors.textDark,
+  },
+  incomeInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 20,
+    gap: 8,
+  },
+  incomeInput: {
     flex: 1,
     ...Typography.body,
     color: Colors.textDark,
