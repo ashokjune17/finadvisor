@@ -14,17 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Colors, Shadows } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
-import { 
-  Plus, 
-  Target, 
-  ChevronRight, 
-  Calendar,
-  DollarSign,
-  X,
-  Smile,
-  MessageCircle,
-  Edit
-} from 'lucide-react-native';
+import { Plus, Target, ChevronRight, Calendar, DollarSign, X, Smile, MessageCircle, CreditCard as Edit } from 'lucide-react-native';
 
 interface Goal {
   id: string;
