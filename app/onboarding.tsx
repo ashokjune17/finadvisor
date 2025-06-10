@@ -61,18 +61,6 @@ export default function OnboardingScreen() {
       options: ["Let's do this! 🚀", "Tell me more first 🤔"],
     },
     {
-      id: 'name',
-      message: "Awesome! What should I call you? ✨",
-      type: 'input',
-      placeholder: 'Your name...',
-    },
-    {
-      id: 'age',
-      message: "Nice to meet you! How old are you? This helps me suggest the right investment timeline 📊",
-      type: 'input',
-      placeholder: 'Your age...',
-    },
-    {
       id: 'mobile',
       message: "Let's secure your account! What's your mobile number? 📱",
       type: 'mobile',
@@ -85,18 +73,17 @@ export default function OnboardingScreen() {
       placeholder: 'Enter 6-digit OTP...',
     },
     {
-      id: 'goals',
-      message: "What are you saving for? Dream vacay 🌴, new ride 🚗, your future self 🧘‍♀️?",
-      options: [
-        "Emergency Fund 🛡️",
-        "Dream Vacation 🌴",
-        "Buy a House 🏠",
-        "New Car 🚗",
-        "Retirement 🧘‍♀️",
-        "Start a Business 💼",
-      ],
-      multiSelect: true,
-    },    
+      id: 'name',
+      message: "Awesome! What should I call you? ✨",
+      type: 'input',
+      placeholder: 'Your name...',
+    },
+    {
+      id: 'age',
+      message: "Nice to meet you! How old are you? This helps me suggest the right investment timeline 📊",
+      type: 'input',
+      placeholder: 'Your age...',
+    }, 
     {
       id: 'income',
       message: "Last question! What's your monthly income range? (This stays private, obvs 🔒)",
@@ -152,61 +139,61 @@ export default function OnboardingScreen() {
         "Maximize returns 💰",
       ],
     },
-    {
-      id: 'risk_5',
-      message: "How long can you stay invested without needing this money?",
-      options: [
-        "Less than 1 year ⏱️",
-        "1–3 years 🧭",
-        "5+ years 🌱",
-      ],
-    },
-    {
-      id: 'risk_6',
-      message: "Do you track or follow stock market news or finance influencers?",
-      options: [
-        "Not at all 🙈",
-        "Sometimes on Instagram/Twitter 📱",
-        "Yes, I read/watch regularly 📊",
-      ],
-    },
-    {
-      id: 'risk_7',
-      message: "What percentage of your income are you comfortable investing monthly?",
-      options: [
-        "<10% 🧃",
-        "10–30% ☕",
-        "30% 🔋",
-      ],
-    },
-    {
-      id: 'risk_8',
-      message: "Would you try crypto or startup investing?",
-      options: [
-        "No way! Too risky 😵",
-        "Maybe a small amount 💡",
-        "Yes! I love high-risk, high-reward bets 🔥",
-      ],
-    },
-    {
-      id: 'risk_9',
-      message: "What kind of investments have you made so far?",
-      options: [
-        "Not at all 🙈",
-        "FDs, LICs, RDs only",
-        "Mutual Funds or Gold",
-        "Stocks, Crypto, Startups",
-      ],
-    },
-    {
-      id: 'risk_10',
-      message: "If your friend made big money from a risky investment, what would you do?",
-      options: [
-        "Stay calm, not my style 😇",
-        "Feel tempted but cautious 🤔",
-        "Jump in, FOMO is real 🤑",
-      ],
-    },
+    // {
+    //   id: 'risk_5',
+    //   message: "How long can you stay invested without needing this money?",
+    //   options: [
+    //     "Less than 1 year ⏱️",
+    //     "1–3 years 🧭",
+    //     "5+ years 🌱",
+    //   ],
+    // },
+    // {
+    //   id: 'risk_6',
+    //   message: "Do you track or follow stock market news or finance influencers?",
+    //   options: [
+    //     "Not at all 🙈",
+    //     "Sometimes on Instagram/Twitter 📱",
+    //     "Yes, I read/watch regularly 📊",
+    //   ],
+    // },
+    // {
+    //   id: 'risk_7',
+    //   message: "What percentage of your income are you comfortable investing monthly?",
+    //   options: [
+    //     "<10% 🧃",
+    //     "10–30% ☕",
+    //     "30% 🔋",
+    //   ],
+    // },
+    // {
+    //   id: 'risk_8',
+    //   message: "Would you try crypto or startup investing?",
+    //   options: [
+    //     "No way! Too risky 😵",
+    //     "Maybe a small amount 💡",
+    //     "Yes! I love high-risk, high-reward bets 🔥",
+    //   ],
+    // },
+    // {
+    //   id: 'risk_9',
+    //   message: "What kind of investments have you made so far?",
+    //   options: [
+    //     "Not at all 🙈",
+    //     "FDs, LICs, RDs only",
+    //     "Mutual Funds or Gold",
+    //     "Stocks, Crypto, Startups",
+    //   ],
+    // },
+    // {
+    //   id: 'risk_10',
+    //   message: "If your friend made big money from a risky investment, what would you do?",
+    //   options: [
+    //     "Stay calm, not my style 😇",
+    //     "Feel tempted but cautious 🤔",
+    //     "Jump in, FOMO is real 🤑", 
+    //   ],
+    // },
     {
       id: 'complete',
       message: "Amazing! 🎉 I'm creating your personalized financial plan. Ready to see what your money can do?",
