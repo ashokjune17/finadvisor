@@ -22,7 +22,8 @@ import {
   DollarSign,
   X,
   Smile,
-  MessageCircle
+  MessageCircle,
+  Edit
 } from 'lucide-react-native';
 
 interface Goal {
@@ -165,22 +166,13 @@ export default function GoalsScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Your Goals</Text>
-            <View style={styles.addButtonsContainer}>
-              <TouchableOpacity
-                style={styles.chatButton}
-                onPress={handleCreateGoalChat}
-              >
-                <MessageCircle size={18} color={Colors.surface} />
-                <Text style={styles.chatButtonText}>Chat</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.addButton}
-                onPress={() => setShowAddModal(true)}
-              >
-                <Plus size={18} color={Colors.surface} />
-                <Text style={styles.addButtonText}>Quick</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+              style={styles.addGoalButton}
+              onPress={handleCreateGoalChat}
+            >
+              <MessageCircle size={18} color={Colors.surface} />
+              <Text style={styles.addGoalButtonText}>Add Goal</Text>
+            </TouchableOpacity>
           </View>
 
           {goals.map((goal) => (
@@ -222,8 +214,9 @@ export default function GoalsScreen() {
                 <Text style={styles.goalRemaining}>
                   ₹{(goal.target - goal.current).toLocaleString('en-IN')} left to go
                 </Text>
-                <TouchableOpacity style={styles.contributeButton}>
-                  <Text style={styles.contributeText}>+ Add Money</Text>
+                <TouchableOpacity style={styles.editButton}>
+                  <Edit size={14} color={Colors.primary} />
+                  <Text style={styles.editText}>Edit</Text>
                 </TouchableOpacity>
               </View>
             </TouchableOpacity>
@@ -236,21 +229,13 @@ export default function GoalsScreen() {
               <Text style={styles.emptySubtitle}>
                 Add your first goal and start building your future
               </Text>
-              <View style={styles.emptyButtonsContainer}>
-                <TouchableOpacity
-                  style={styles.emptyChatButton}
-                  onPress={handleCreateGoalChat}
-                >
-                  <MessageCircle size={20} color={Colors.surface} />
-                  <Text style={styles.emptyChatButtonText}>Create with Chat ✨</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.emptyButton}
-                  onPress={() => setShowAddModal(true)}
-                >
-                  <Text style={styles.emptyButtonText}>Quick Create</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                style={styles.emptyAddGoalButton}
+                onPress={handleCreateGoalChat}
+              >
+                <MessageCircle size={20} color={Colors.surface} />
+                <Text style={styles.emptyAddGoalButtonText}>Add Goal ✨</Text>
+              </TouchableOpacity>
             </View>
           )}
         </View>
@@ -434,33 +419,16 @@ const styles = StyleSheet.create({
     ...Typography.h3,
     color: Colors.textDark,
   },
-  addButtonsContainer: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  chatButton: {
+  addGoalButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.accent,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    gap: 4,
+    gap: 6,
   },
-  chatButtonText: {
-    ...Typography.captionMedium,
-    color: Colors.surface,
-  },
-  addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 4,
-  },
-  addButtonText: {
+  addGoalButtonText: {
     ...Typography.captionMedium,
     color: Colors.surface,
   },
@@ -531,15 +499,20 @@ const styles = StyleSheet.create({
     ...Typography.caption,
     color: Colors.textMuted,
   },
-  contributeButton: {
-    backgroundColor: Colors.accent,
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.background,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: Colors.primary,
   },
-  contributeText: {
+  editText: {
     ...Typography.captionMedium,
-    color: Colors.surface,
+    color: Colors.primary,
   },
   emptyState: {
     alignItems: 'center',
@@ -557,11 +530,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 24,
   },
-  emptyButtonsContainer: {
-    gap: 12,
-    alignItems: 'center',
-  },
-  emptyChatButton: {
+  emptyAddGoalButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.accent,
@@ -571,17 +540,7 @@ const styles = StyleSheet.create({
     gap: 8,
     ...Shadows.medium,
   },
-  emptyChatButtonText: {
-    ...Typography.bodySemiBold,
-    color: Colors.surface,
-  },
-  emptyButton: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 20,
-  },
-  emptyButtonText: {
+  emptyAddGoalButtonText: {
     ...Typography.bodySemiBold,
     color: Colors.surface,
   },

@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,21 +12,8 @@ import { Colors, Shadows } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { 
   Bell, 
-  Plus, 
-  TrendingUp, 
-  Target, 
-  BookOpen, 
-  Award,
   ChevronRight,
-  DollarSign 
 } from 'lucide-react-native';
-
-interface QuickAction {
-  id: string;
-  title: string;
-  icon: React.ReactNode;
-  color: string;
-}
 
 interface GoalProgress {
   id: string;
@@ -38,33 +24,6 @@ interface GoalProgress {
 }
 
 export default function HomeScreen() {
-  const quickActions: QuickAction[] = [
-    {
-      id: 'add-goal',
-      title: 'Add Goal',
-      icon: <Plus size={24} color={Colors.surface} />,
-      color: Colors.primary,
-    },
-    {
-      id: 'track-expense',
-      title: 'Log Expense',
-      icon: <DollarSign size={24} color={Colors.surface} />,
-      color: Colors.accent,
-    },
-    {
-      id: 'learn',
-      title: 'Learn',
-      icon: <BookOpen size={24} color={Colors.surface} />,
-      color: Colors.warning,
-    },
-    {
-      id: 'invest',
-      title: 'Invest',
-      icon: <TrendingUp size={24} color={Colors.surface} />,
-      color: Colors.success,
-    },
-  ];
-
   const goalProgress: GoalProgress[] = [
     {
       id: '1',
@@ -131,22 +90,6 @@ export default function HomeScreen() {
           </View>
         </LinearGradient>
 
-        {/* Quick Actions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.quickActions}>
-            {quickActions.map((action) => (
-              <TouchableOpacity
-                key={action.id}
-                style={[styles.quickAction, { backgroundColor: action.color }]}
-              >
-                {action.icon}
-                <Text style={styles.quickActionText}>{action.title}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
         {/* Goal Progress */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -186,23 +129,6 @@ export default function HomeScreen() {
               </View>
             </TouchableOpacity>
           ))}
-        </View>
-
-        {/* Smart Tip */}
-        <View style={styles.tipCard}>
-          <View style={styles.tipHeader}>
-            <Award size={24} color={Colors.warning} />
-            <Text style={styles.tipTitle}>🧠 Smart Tip</Text>
-          </View>
-          <Text style={styles.tipContent}>
-            Investing early = Future You thanks you 💼📊
-          </Text>
-          <Text style={styles.tipDetail}>
-            Starting investments in your 20s can grow your wealth 3x faster due to compound interest!
-          </Text>
-          <TouchableOpacity style={styles.tipButton}>
-            <Text style={styles.tipButtonText}>Learn More</Text>
-          </TouchableOpacity>
         </View>
 
         {/* Bottom spacing */}
@@ -299,24 +225,6 @@ const styles = StyleSheet.create({
     ...Typography.captionMedium,
     color: Colors.primary,
   },
-  quickActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  quickAction: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    ...Shadows.small,
-  },
-  quickActionText: {
-    ...Typography.smallMedium,
-    color: Colors.surface,
-    marginTop: 8,
-    textAlign: 'center',
-  },
   goalCard: {
     backgroundColor: Colors.surface,
     padding: 16,
@@ -365,45 +273,6 @@ const styles = StyleSheet.create({
   progressFill: {
     height: '100%',
     borderRadius: 3,
-  },
-  tipCard: {
-    backgroundColor: Colors.surface,
-    marginHorizontal: 24,
-    padding: 20,
-    borderRadius: 16,
-    ...Shadows.medium,
-  },
-  tipHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  tipTitle: {
-    ...Typography.bodySemiBold,
-    color: Colors.textDark,
-    marginLeft: 8,
-  },
-  tipContent: {
-    ...Typography.bodySemiBold,
-    color: Colors.textDark,
-    marginBottom: 8,
-  },
-  tipDetail: {
-    ...Typography.caption,
-    color: Colors.textMuted,
-    marginBottom: 16,
-    lineHeight: 20,
-  },
-  tipButton: {
-    alignSelf: 'flex-start',
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  tipButtonText: {
-    ...Typography.captionMedium,
-    color: Colors.surface,
   },
   bottomSpacing: {
     height: 24,
