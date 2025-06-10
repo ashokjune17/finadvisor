@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import { Colors, Shadows } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { 
@@ -20,7 +21,8 @@ import {
   Calendar,
   DollarSign,
   X,
-  Smile
+  Smile,
+  MessageCircle
 } from 'lucide-react-native';
 
 interface Goal {
@@ -45,6 +47,7 @@ const goalCategories = [
 ];
 
 export default function GoalsScreen() {
+  const router = useRouter();
   const [goals, setGoals] = useState<Goal[]>([
     {
       id: '1',
@@ -123,6 +126,10 @@ export default function GoalsScreen() {
     return totalTarget > 0 ? Math.round((totalCurrent / totalTarget) * 100) : 0;
   };
 
+  const handleCreateGoalChat = () => {
+    router.push('/create-goal');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -158,13 +165,22 @@ export default function GoalsScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Your Goals</Text>
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={() => setShowAddModal(true)}
-            >
-              <Plus size={20} color={Colors.surface} />
-              <Text style={styles.addButtonText}>Add Goal</Text>
-            </TouchableOpacity>
+            <View style={styles.addButtonsContainer}>
+              <TouchableOpacity
+                style={styles.chatButton}
+                onPress={handleCreateGoalChat}
+              >
+                <MessageCircle size={18} color={Colors.surface} />
+                <Text style={styles.chatButtonText}>Chat</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={() => setShowAddModal(true)}
+              >
+                <Plus size={18} color={Colors.surface} />
+                <Text style={styles.addButtonText}>Quick</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {goals.map((goal) => (
@@ -220,12 +236,21 @@ export default function GoalsScreen() {
               <Text style={styles.emptySubtitle}>
                 Add your first goal and start building your future
               </Text>
-              <TouchableOpacity
-                style={styles.emptyButton}
-                onPress={() => setShowAddModal(true)}
-              >
-                <Text style={styles.emptyButtonText}>Create First Goal</Text>
-              </TouchableOpacity>
+              <View style={styles.emptyButtonsContainer}>
+                <TouchableOpacity
+                  style={styles.emptyChatButton}
+                  onPress={handleCreateGoalChat}
+                >
+                  <MessageCircle size={20} color={Colors.surface} />
+                  <Text style={styles.emptyChatButtonText}>Create with Chat ✨</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.emptyButton}
+                  onPress={() => setShowAddModal(true)}
+                >
+                  <Text style={styles.emptyButtonText}>Quick Create</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           )}
         </View>
@@ -249,7 +274,7 @@ export default function GoalsScreen() {
       >
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Add New Goal ✨</Text>
+            <Text style={styles.modalTitle}>Quick Add Goal ⚡</Text>
             <TouchableOpacity
               style={styles.closeButton}
               onPress={() => setShowAddModal(false)}
@@ -320,6 +345,22 @@ export default function GoalsScreen() {
             <TouchableOpacity style={styles.createButton} onPress={handleAddGoal}>
               <Text style={styles.createButtonText}>Create Goal 🚀</Text>
             </TouchableOpacity>
+
+            <View style={styles.chatPrompt}>
+              <Text style={styles.chatPromptText}>
+                Want a more personalized experience? Try our interactive chat! 💬
+              </Text>
+              <TouchableOpacity
+                style={styles.chatPromptButton}
+                onPress={() => {
+                  setShowAddModal(false);
+                  handleCreateGoalChat();
+                }}
+              >
+                <MessageCircle size={16} color={Colors.primary} />
+                <Text style={styles.chatPromptButtonText}>Create with Chat</Text>
+              </TouchableOpacity>
+            </View>
           </ScrollView>
         </SafeAreaView>
       </Modal>
@@ -393,11 +434,28 @@ const styles = StyleSheet.create({
     ...Typography.h3,
     color: Colors.textDark,
   },
+  addButtonsContainer: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  chatButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.accent,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 4,
+  },
+  chatButtonText: {
+    ...Typography.captionMedium,
+    color: Colors.surface,
+  },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.primary,
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
     gap: 4,
@@ -498,6 +556,24 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     marginBottom: 24,
+  },
+  emptyButtonsContainer: {
+    gap: 12,
+    alignItems: 'center',
+  },
+  emptyChatButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.accent,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 25,
+    gap: 8,
+    ...Shadows.medium,
+  },
+  emptyChatButtonText: {
+    ...Typography.bodySemiBold,
+    color: Colors.surface,
   },
   emptyButton: {
     backgroundColor: Colors.primary,
@@ -615,5 +691,31 @@ const styles = StyleSheet.create({
   createButtonText: {
     ...Typography.bodySemiBold,
     color: Colors.surface,
+  },
+  chatPrompt: {
+    backgroundColor: Colors.border,
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  chatPromptText: {
+    ...Typography.caption,
+    color: Colors.textMuted,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  chatPromptButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 16,
+    gap: 6,
+  },
+  chatPromptButtonText: {
+    ...Typography.captionMedium,
+    color: Colors.primary,
   },
 });
