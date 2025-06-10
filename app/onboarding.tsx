@@ -16,7 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Colors, Shadows } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
-import { ChevronRight, Target, DollarSign, TrendingUp, Smartphone } from 'lucide-react-native';
+import { ChevronRight, Target, DollarSign, TrendingUp, Smartphone, Heart } from 'lucide-react-native';
 
 interface ChatMessage {
   id: string;
@@ -32,6 +32,7 @@ interface UserData {
   goals: string[];
   riskTolerance: string;
   income: string;
+  socialStatus: string;
 }
 
 export default function OnboardingScreen() {
@@ -46,6 +47,7 @@ export default function OnboardingScreen() {
     goals: [],
     riskTolerance: '',
     income: '',
+    socialStatus: '',
   });
   const [fadeAnim] = useState(new Animated.Value(0));
 
@@ -75,9 +77,20 @@ export default function OnboardingScreen() {
     }, 
     {
       id: 'income',
-      message: "Last question! What's your monthly income? (This stays private, obvs 🔒)",
+      message: "What's your monthly income? (This stays private, obvs 🔒)",
       type: 'income',
       placeholder: 'Enter your monthly income in ₹...',
+    },
+    {
+      id: 'social_status',
+      message: "What's your vibe right now? 💫 This helps me understand your financial priorities!",
+      options: [
+        "💃🕺 Single",
+        "👰🤵 Married, no kids yet",
+        "👨‍👩‍👧‍👦 Married with kids",
+        "🧑‍👧 Single parent",
+        "👵👴 Taking care of parents/elders"
+      ],
     },
     {
       id: 'risk',
@@ -179,6 +192,8 @@ export default function OnboardingScreen() {
       return;
     } else if (currentFlow.id === 'risk') {
       setUserData(prev => ({ ...prev, riskTolerance: option }));
+    } else if (currentFlow.id === 'social_status') {
+      setUserData(prev => ({ ...prev, socialStatus: option }));
     }
     
     // Move to next step
