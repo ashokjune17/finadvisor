@@ -199,6 +199,8 @@ export default function OnboardingScreen() {
         pan: userData.pan.toUpperCase(),
       };
 
+      console.log('🚀 Submitting payload:', payload);
+
       const response = await fetch('https://fin-advisor-ashokkumar5.replit.app/user_onboard', {
         method: 'POST',
         headers: {
@@ -207,9 +209,22 @@ export default function OnboardingScreen() {
         body: JSON.stringify(payload),
       });
 
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response headers:', response.headers);
+
+      const responseText = await response.text();
+      console.log('📡 Raw response:', responseText);
+
       if (response.ok) {
-        const data = await response.json();
-        console.log('User onboarded successfully:', data);
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (parseError) {
+          console.log('⚠️ Response is not JSON, treating as success');
+          data = { message: 'Success' };
+        }
+        
+        console.log('✅ User onboarded successfully:', data);
         
         setTimeout(() => {
           addBotMessage("🎉 Welcome aboard! Your financial journey starts now. Let's make your money work harder than you do! 💪✨");
@@ -219,13 +234,33 @@ export default function OnboardingScreen() {
           }, 2000);
         }, 1000);
       } else {
-        throw new Error('Failed to onboard user');
+        console.error('❌ API Error - Status:', response.status);
+        console.error('❌ API Error - Response:', responseText);
+        
+        let errorMessage = 'Unknown error occurred';
+        try {
+          const errorData = JSON.parse(responseText);
+          errorMessage = errorData.message || errorData.error || `Server error: ${response.status}`;
+        } catch {
+          errorMessage = `Server error: ${response.status} - ${responseText}`;
+        }
+        
+        throw new Error(errorMessage);
       }
     } catch (error) {
-      console.error('Error onboarding user:', error);
+      console.error('💥 Complete error details:', error);
+      
+      let userFriendlyMessage = 'Something went wrong while setting up your account.';
+      
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        userFriendlyMessage = 'Unable to connect to the server. Please check your internet connection.';
+      } else if (error instanceof Error) {
+        userFriendlyMessage = error.message;
+      }
+      
       Alert.alert(
         'Oops!', 
-        'Something went wrong while setting up your account. Please try again.',
+        userFriendlyMessage + '\n\nWould you like to try again or skip for now?',
         [
           { text: 'Try Again', onPress: () => setCurrentStep(currentStep - 1) },
           { text: 'Skip for now', onPress: () => router.replace('/(tabs)') }
