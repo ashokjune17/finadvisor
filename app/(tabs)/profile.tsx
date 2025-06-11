@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,20 +6,34 @@ import {
   ScrollView,
   TouchableOpacity,
   Switch,
-  Image,
   Alert,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Shadows } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
-import { User, Settings, Bell, Lock, CircleHelp as HelpCircle, LogOut, ChevronRight, Shield, Smartphone, Eye, Target, Award, TrendingUp, BookOpen, GraduationCap } from 'lucide-react-native';
+import { User, Settings, Bell, Lock, CircleHelp as HelpCircle, LogOut, ChevronRight, Shield, Smartphone, Eye, Target, Award, TrendingUp, BookOpen, GraduationCap, RefreshCw } from 'lucide-react-native';
 
-interface ProfileStats {
-  goalsCompleted: number;
-  totalInvested: number;
-  learningModules: number;
-  daysStreak: number;
+interface UserProfile {
+  phone_number: string;
+  name: string;
+  age: number;
+  dob: string;
+  pan: string;
+  risk: string;
+  is_basic_completed: string;
+  is_risk_completed: string;
+  is_goal_completed: string;
+  is_fund_completed: string;
+  marital_status: string;
+  income: number;
+}
+
+interface ApiResponse {
+  result: string;
+  Profile: UserProfile;
 }
 
 interface SettingItem {
@@ -37,12 +51,73 @@ export default function ProfileScreen() {
   const [notifications, setNotifications] = useState(true);
   const [biometrics, setBiometrics] = useState(false);
   const [dataPrivacy, setDataPrivacy] = useState(true);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const profileStats: ProfileStats = {
-    goalsCompleted: 2,
-    totalInvested: 175000,
-    learningModules: 3,
-    daysStreak: 12,
+  // Hardcoded phone number for demo - in production, get from user context/storage
+  const phoneNumber = '7406189782';
+
+  const getRiskText = (riskLevel: string): string => {
+    const riskMap: { [key: string]: string } = {
+      '1': 'Play It Safe',
+      '2': 'Cautious Mover',
+      '3': 'Balanced Approach',
+      '4': 'Growth Seeker',
+      '5': 'Risk Explorer',
+    };
+    return riskMap[riskLevel] || 'Unknown Risk Level';
+  };
+
+  const fetchUserProfile = async () => {
+    try {
+      setError(null);
+      const response = await fetch(`https://fin-advisor-ashokkumar5.replit.app/profile?phone_number=${phoneNumber}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch profile: ${response.status}`);
+      }
+      
+      const data: ApiResponse = await response.json();
+      
+      if (data.result === 'Success' && data.Profile) {
+        setUserProfile(data.Profile);
+      } else {
+        throw new Error('Invalid response format');
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load profile');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchUserProfile();
+  };
+
+  const getCompletionStats = () => {
+    if (!userProfile) return { completed: 0, total: 4 };
+    
+    const completions = [
+      userProfile.is_basic_completed === 'True',
+      userProfile.is_risk_completed === 'True',
+      userProfile.is_goal_completed === 'True',
+      userProfile.is_fund_completed === 'True',
+    ];
+    
+    return {
+      completed: completions.filter(Boolean).length,
+      total: completions.length,
+    };
   };
 
   const settingsItems: SettingItem[] = [
@@ -132,9 +207,42 @@ export default function ProfileScreen() {
     return `₹${amount.toLocaleString('en-IN')}`;
   };
 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.loadingText}>Loading your profile...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorTitle}>Oops! Something went wrong</Text>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={fetchUserProfile}>
+            <RefreshCw size={20} color={Colors.surface} />
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const completionStats = getCompletionStats();
+
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Profile</Text>
@@ -155,75 +263,92 @@ export default function ProfileScreen() {
               </View>
             </View>
             <View style={styles.profileInfo}>
-              <Text style={styles.userName}>Alex Johnson</Text>
-              <Text style={styles.userEmail}>alex@example.com</Text>
-              <View style={styles.levelContainer}>
+              <Text style={styles.userName}>{userProfile?.name || 'User'}</Text>
+              <Text style={styles.userDetails}>
+                Age: {userProfile?.age} • {userProfile?.marital_status?.replace(/[👰🤵👨‍👩‍👧‍👦💃🕺🧑‍👧👵👴]/g, '').trim()}
+              </Text>
+              <View style={styles.riskContainer}>
                 <Award size={16} color={Colors.surface} />
-                <Text style={styles.levelText}>Level 3 Investor</Text>
+                <Text style={styles.riskText}>
+                  Risk Profile: {getRiskText(userProfile?.risk || '1')}
+                </Text>
               </View>
             </View>
           </View>
         </LinearGradient>
 
-        {/* Learning Progress Card */}
-        <View style={styles.learningCard}>
-          <View style={styles.learningHeader}>
-            <GraduationCap size={24} color={Colors.primary} />
-            <Text style={styles.learningTitle}>Learning Progress 🎓</Text>
+        {/* Profile Completion Card */}
+        <View style={styles.completionCard}>
+          <View style={styles.completionHeader}>
+            <Target size={24} color={Colors.primary} />
+            <Text style={styles.completionTitle}>Profile Completion</Text>
           </View>
-          <Text style={styles.learningDescription}>
-            Keep building your financial knowledge! You're doing great.
+          <Text style={styles.completionDescription}>
+            Complete your profile to unlock all features and get personalized recommendations.
           </Text>
-          <View style={styles.learningStats}>
-            <View style={styles.learningStat}>
-              <Text style={styles.learningStatNumber}>3</Text>
-              <Text style={styles.learningStatLabel}>Modules Completed</Text>
+          
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBar}>
+              <LinearGradient
+                colors={[Colors.primary, Colors.accent]}
+                style={[
+                  styles.progressFill,
+                  { width: `${(completionStats.completed / completionStats.total) * 100}%` }
+                ]}
+              />
             </View>
-            <View style={styles.learningStat}>
-              <Text style={styles.learningStatNumber}>12</Text>
-              <Text style={styles.learningStatLabel}>Day Streak</Text>
+            <Text style={styles.progressText}>
+              {completionStats.completed}/{completionStats.total} sections completed
+            </Text>
+          </View>
+
+          <View style={styles.completionItems}>
+            <View style={styles.completionItem}>
+              <View style={[
+                styles.completionDot,
+                { backgroundColor: userProfile?.is_basic_completed === 'True' ? Colors.success : Colors.border }
+              ]} />
+              <Text style={styles.completionItemText}>Basic Information</Text>
             </View>
-            <View style={styles.learningStat}>
-              <Text style={styles.learningStatNumber}>450</Text>
-              <Text style={styles.learningStatLabel}>XP Earned</Text>
+            <View style={styles.completionItem}>
+              <View style={[
+                styles.completionDot,
+                { backgroundColor: userProfile?.is_risk_completed === 'True' ? Colors.success : Colors.border }
+              ]} />
+              <Text style={styles.completionItemText}>Risk Assessment</Text>
+            </View>
+            <View style={styles.completionItem}>
+              <View style={[
+                styles.completionDot,
+                { backgroundColor: userProfile?.is_goal_completed === 'True' ? Colors.success : Colors.border }
+              ]} />
+              <Text style={styles.completionItemText}>Financial Goals</Text>
+            </View>
+            <View style={styles.completionItem}>
+              <View style={[
+                styles.completionDot,
+                { backgroundColor: userProfile?.is_fund_completed === 'True' ? Colors.success : Colors.border }
+              ]} />
+              <Text style={styles.completionItemText}>Fund Selection</Text>
             </View>
           </View>
-          <TouchableOpacity 
-            style={styles.learningButton}
-            onPress={() => Alert.alert('Learning Hub', 'Navigate to learning modules, courses, and financial education content!')}
-          >
-            <BookOpen size={16} color={Colors.surface} />
-            <Text style={styles.learningButtonText}>Continue Learning</Text>
-          </TouchableOpacity>
         </View>
 
-        {/* Stats Grid */}
-        <View style={styles.statsContainer}>
-          <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <Target size={24} color={Colors.primary} />
-              <Text style={styles.statNumber}>{profileStats.goalsCompleted}</Text>
-              <Text style={styles.statLabel}>Goals Completed</Text>
-            </View>
-            
-            <View style={styles.statCard}>
-              <TrendingUp size={24} color={Colors.accent} />
-              <Text style={styles.statNumber}>
-                {formatCurrency(profileStats.totalInvested)}
+        {/* Financial Overview */}
+        <View style={styles.financialCard}>
+          <Text style={styles.financialTitle}>💰 Financial Overview</Text>
+          <View style={styles.financialStats}>
+            <View style={styles.financialStat}>
+              <Text style={styles.financialStatLabel}>Monthly Income</Text>
+              <Text style={styles.financialStatValue}>
+                {formatCurrency(userProfile?.income || 0)}
               </Text>
-              <Text style={styles.statLabel}>Total Invested</Text>
             </View>
-            
-            <View style={styles.statCard}>
-              <Award size={24} color={Colors.warning} />
-              <Text style={styles.statNumber}>{profileStats.learningModules}</Text>
-              <Text style={styles.statLabel}>Modules Completed</Text>
-            </View>
-            
-            <View style={styles.statCard}>
-              <Text style={styles.streakEmoji}>🔥</Text>
-              <Text style={styles.statNumber}>{profileStats.daysStreak}</Text>
-              <Text style={styles.statLabel}>Day Streak</Text>
+            <View style={styles.financialStat}>
+              <Text style={styles.financialStatLabel}>PAN Number</Text>
+              <Text style={styles.financialStatValue}>
+                {userProfile?.pan || 'Not provided'}
+              </Text>
             </View>
           </View>
         </View>
@@ -320,6 +445,46 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  loadingText: {
+    ...Typography.body,
+    color: Colors.textMuted,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    gap: 16,
+  },
+  errorTitle: {
+    ...Typography.h2,
+    color: Colors.textDark,
+    textAlign: 'center',
+  },
+  errorText: {
+    ...Typography.body,
+    color: Colors.textMuted,
+    textAlign: 'center',
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 20,
+    gap: 8,
+  },
+  retryButtonText: {
+    ...Typography.bodySemiBold,
+    color: Colors.surface,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -370,12 +535,12 @@ const styles = StyleSheet.create({
     color: Colors.surface,
     marginBottom: 4,
   },
-  userEmail: {
+  userDetails: {
     ...Typography.caption,
     color: 'rgba(255, 255, 255, 0.8)',
     marginBottom: 8,
   },
-  levelContainer: {
+  riskContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
@@ -384,12 +549,12 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignSelf: 'flex-start',
   },
-  levelText: {
+  riskText: {
     ...Typography.captionMedium,
     color: Colors.surface,
     marginLeft: 6,
   },
-  learningCard: {
+  completionCard: {
     backgroundColor: Colors.surface,
     marginHorizontal: 24,
     marginBottom: 24,
@@ -397,84 +562,85 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     ...Shadows.medium,
   },
-  learningHeader: {
+  completionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
   },
-  learningTitle: {
+  completionTitle: {
     ...Typography.bodySemiBold,
     color: Colors.textDark,
     marginLeft: 8,
   },
-  learningDescription: {
+  completionDescription: {
     ...Typography.caption,
     color: Colors.textMuted,
     marginBottom: 16,
     lineHeight: 20,
   },
-  learningStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  progressContainer: {
     marginBottom: 16,
   },
-  learningStat: {
-    alignItems: 'center',
+  progressBar: {
+    height: 8,
+    backgroundColor: Colors.border,
+    borderRadius: 4,
+    marginBottom: 8,
   },
-  learningStatNumber: {
-    ...Typography.h3,
-    color: Colors.primary,
+  progressFill: {
+    height: '100%',
+    borderRadius: 4,
   },
-  learningStatLabel: {
-    ...Typography.small,
-    color: Colors.textMuted,
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  learningButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.primary,
-    paddingVertical: 12,
-    borderRadius: 12,
-    gap: 8,
-  },
-  learningButtonText: {
-    ...Typography.bodySemiBold,
-    color: Colors.surface,
-  },
-  statsContainer: {
-    paddingHorizontal: 24,
-    marginBottom: 24,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  statCard: {
-    flex: 1,
-    minWidth: '45%',
-    backgroundColor: Colors.surface,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    ...Shadows.small,
-  },
-  statNumber: {
-    ...Typography.bodySemiBold,
-    color: Colors.textDark,
-    marginTop: 8,
-    marginBottom: 4,
-  },
-  statLabel: {
+  progressText: {
     ...Typography.caption,
     color: Colors.textMuted,
     textAlign: 'center',
   },
-  streakEmoji: {
-    fontSize: 24,
+  completionItems: {
+    gap: 12,
+  },
+  completionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  completionDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  completionItemText: {
+    ...Typography.caption,
+    color: Colors.textDark,
+  },
+  financialCard: {
+    backgroundColor: Colors.surface,
+    marginHorizontal: 24,
+    marginBottom: 24,
+    padding: 20,
+    borderRadius: 16,
+    ...Shadows.medium,
+  },
+  financialTitle: {
+    ...Typography.bodySemiBold,
+    color: Colors.textDark,
+    marginBottom: 16,
+  },
+  financialStats: {
+    gap: 16,
+  },
+  financialStat: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  financialStatLabel: {
+    ...Typography.caption,
+    color: Colors.textMuted,
+  },
+  financialStatValue: {
+    ...Typography.bodySemiBold,
+    color: Colors.textDark,
   },
   section: {
     paddingHorizontal: 24,
