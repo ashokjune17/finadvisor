@@ -207,7 +207,7 @@ export default function CreateGoalScreen() {
       addBotMessage("🎉 Your goal has been created successfully! You can view and manage it in the Goals tab. Let's go crush this goal! 💪");
       
       setTimeout(() => {
-        router.back();
+        router.navigate('/(tabs)/goals');
       }, 2000);
     } finally {
       setLoading(false);
@@ -423,7 +423,7 @@ export default function CreateGoalScreen() {
           addBotMessage("🎉 Your goal has been created successfully! You can view and manage it in the Goals tab. Let's go crush this goal! 💪");
           
           setTimeout(() => {
-            router.back();
+            router.navigate('/(tabs)/goals');
           }, 2000);
         }
       } else {
@@ -469,7 +469,8 @@ export default function CreateGoalScreen() {
           addBotMessage("🚀 Perfect! Your investment plan is all set up! Your goal and fund are now linked. You can track your progress in the Goals tab. Time to make your money work for you! 💪✨");
           
           setTimeout(() => {
-            router.back();
+            // Navigate to Goals tab instead of going back
+            router.navigate('/(tabs)/goals');
           }, 2000);
         }, 1500);
       } else {
@@ -482,7 +483,7 @@ export default function CreateGoalScreen() {
       addBotMessage("⚠️ There was an issue setting up the fund link, but your goal has been created! You can manually select funds later in the Goals tab. 💪");
       
       setTimeout(() => {
-        router.back();
+        router.navigate('/(tabs)/goals');
       }, 2000);
     } finally {
       setLoading(false);
