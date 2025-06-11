@@ -140,11 +140,11 @@ export default function AuthScreen() {
             console.log('profileResponse')
             if (profileResponse.ok) {
               const profileData = await profileResponse.json();
-              const userName = profileData.Profile?.name || 'there';
+              // const userName = profileData.Profile?.name || 'there';
               
               Alert.alert(
                 'Welcome Back! 🎉',
-                `Hi ${userName}! Ready to continue your financial journey?`,
+                `Hi there! Ready to continue your financial journey?`,
                 [
                   {
                     text: 'Let\'s Go!',
