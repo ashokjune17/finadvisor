@@ -243,7 +243,7 @@ export default function CreateGoalScreen() {
       }
       
       const payload = {
-        phone_number: userPhoneNumber,
+        phone_number: '7894561230',
         goal_name: goalData.name,
         target_amount: parseInt(goalData.target_amount),
         target_date: goalData.target_date,
@@ -252,7 +252,7 @@ export default function CreateGoalScreen() {
       
       console.log('🚀 Creating goal with payload:', payload);
       
-      const response = await fetch('https://fin-advisor-ashokkumar5.replit.app/user_onboard/create_goal', {
+      const response = await fetch('https://fin-advisor-ashokkumar5.replit.app/create_goal', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
