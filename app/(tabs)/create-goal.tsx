@@ -92,9 +92,8 @@ export default function CreateGoalScreen() {
   ];
 
   useEffect(() => {
-    fetchGoalSuggestions();
-    loadUserPhoneNumber();
-    addBotMessage(chatFlow[0].message);
+    // Initialize with welcome message when component mounts
+    initializeChat();
   }, []);
 
   useEffect(() => {
@@ -104,6 +103,27 @@ export default function CreateGoalScreen() {
       useNativeDriver: true,
     }).start();
   }, [messages]);
+
+  const initializeChat = () => {
+    // Clear all state and start fresh
+    setCurrentStep(0);
+    setMessages([]);
+    setTextInput('');
+    setGoalData({
+      name: '',
+      target_amount: '',
+      target_date: '',
+      amount_saved: '',
+    });
+    setLoading(false);
+    
+    // Load initial data
+    fetchGoalSuggestions();
+    loadUserPhoneNumber();
+    
+    // Add welcome message
+    addBotMessage(chatFlow[0].message);
+  };
 
   const loadUserPhoneNumber = () => {
     // In a real app, you would get this from AsyncStorage, Redux, or context
