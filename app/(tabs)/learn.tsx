@@ -48,7 +48,7 @@ export default function LearnScreen() {
   const learningModules: LearningModule[] = [
     {
       id: '1',
-      title: 'Budget Like a Boss 💰',
+      title: 'How Credit Cards really work?',
       description: 'Master the art of budgeting and take control of your money',
       duration: '15 min',
       difficulty: 'Beginner',
@@ -60,8 +60,8 @@ export default function LearnScreen() {
     },
     {
       id: '2',
-      title: 'Investing 101: What Even Is an ETF?',
-      description: 'Demystify investing and learn about ETFs, mutual funds, and more',
+      title: 'Investing 101: Power of Compounding',
+      description: 'Discover how your money grows exponentially over time.',
       duration: '20 min',
       difficulty: 'Beginner',
       progress: 65,
