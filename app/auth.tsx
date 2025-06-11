@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  Platform,
   Animated,
   Alert,
   ActivityIndicator,
@@ -134,34 +133,18 @@ export default function AuthScreen() {
         case 'Risk':
           // User completed onboarding - go to main app
           console.log('✅ User fully onboarded - going to main app');
-          try {
-            // Try to get user profile for welcome message
-            const profileResponse = await fetch(`https://fin-advisor-ashokkumar5.replit.app/home?phone_number=${cleanPhone}`);
-            console.log('profileResponse')
-            if (profileResponse.ok) {
-              const profileData = await profileResponse.json();
-              // const userName = profileData.Profile?.name || 'there';
-              
-              Alert.alert(
-                'Welcome Back! 🎉',
-                `Hi there! Ready to continue your financial journey?`,
-                [
-                  {
-                    text: 'Let\'s Go!',
-                    onPress: () => {
-                      router.replace('/(tabs)');
-                    }
-                  }
-                ]
-              );
-            } else {
-              // Profile fetch failed, but user is onboarded
-              router.replace('/(tabs)');
-            }
-          } catch (profileError) {
-            console.error('⚠️ Error fetching profile, but proceeding to main app:', profileError);
-            router.replace('/(tabs)');
-          }
+          Alert.alert(
+            'Welcome Back! 🎉',
+            'Ready to continue your financial journey?',
+            [
+              {
+                text: 'Let\'s Go!',
+                onPress: () => {
+                  router.replace('/(tabs)');
+                }
+              }
+            ]
+          );
           break;
 
         default:
