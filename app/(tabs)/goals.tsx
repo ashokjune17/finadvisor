@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,22 +8,29 @@ import {
   Modal,
   TextInput,
   Alert,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Colors, Shadows } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
-import { Plus, Target, ChevronRight, Calendar, DollarSign, X, Smile, MessageCircle, CreditCard as Edit } from 'lucide-react-native';
+import { Plus, Target, ChevronRight, Calendar, DollarSign, X, Smile, MessageCircle, CreditCard as Edit, RefreshCw, TrendingUp } from 'lucide-react-native';
 
 interface Goal {
-  id: string;
-  title: string;
-  emoji: string;
-  current: number;
-  target: number;
-  deadline: string;
-  category: string;
+  goal_id: number;
+  goal_name: string;
+  current_amount: number;
+  target_amount: number;
+  target_date: string;
+  fund_decided: string;
+  phone_number: string;
+}
+
+interface ApiResponse {
+  result: string;
+  Goals: Goal[];
 }
 
 const goalCategories = [
@@ -39,36 +46,10 @@ const goalCategories = [
 
 export default function GoalsScreen() {
   const router = useRouter();
-  const [goals, setGoals] = useState<Goal[]>([
-    {
-      id: '1',
-      title: 'Bali Trip',
-      emoji: '🌴',
-      current: 25000,
-      target: 100000,
-      deadline: 'Dec 2024',
-      category: 'vacation',
-    },
-    {
-      id: '2',
-      title: 'Emergency Fund',
-      emoji: '🛡️',
-      current: 75000,
-      target: 150000,
-      deadline: 'Jun 2024',
-      category: 'emergency',
-    },
-    {
-      id: '3',
-      title: 'New MacBook',
-      emoji: '💻',
-      current: 45000,
-      target: 120000,
-      deadline: 'Aug 2024',
-      category: 'gadget',
-    },
-  ]);
-
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newGoal, setNewGoal] = useState({
     title: '',
@@ -76,6 +57,43 @@ export default function GoalsScreen() {
     deadline: '',
     selectedCategory: goalCategories[0],
   });
+
+  // Hardcoded phone number for demo - in production, get from user context/storage
+  const phoneNumber = '7406189782';
+
+  const fetchGoals = async () => {
+    try {
+      setError(null);
+      const response = await fetch(`https://fin-advisor-ashokkumar5.replit.app/goals?phone_number=${phoneNumber}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch goals: ${response.status}`);
+      }
+      
+      const data: ApiResponse = await response.json();
+      
+      if (data.result === 'Success' && data.Goals) {
+        setGoals(data.Goals);
+      } else {
+        throw new Error('Invalid response format');
+      }
+    } catch (error) {
+      console.error('Error fetching goals:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load goals');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchGoals();
+  }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchGoals();
+  };
 
   const formatCurrency = (amount: number) => {
     return `₹${amount.toLocaleString('en-IN')}`;
@@ -85,23 +103,41 @@ export default function GoalsScreen() {
     return Math.min((current / target) * 100, 100);
   };
 
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        year: 'numeric' 
+      });
+    } catch {
+      return dateString;
+    }
+  };
+
+  const getGoalEmoji = (goalName: string) => {
+    const name = goalName.toLowerCase();
+    if (name.includes('car') || name.includes('vehicle')) return '🚗';
+    if (name.includes('house') || name.includes('home')) return '🏠';
+    if (name.includes('vacation') || name.includes('trip') || name.includes('travel')) return '🌴';
+    if (name.includes('emergency') || name.includes('fund')) return '🛡️';
+    if (name.includes('retirement')) return '🧘‍♀️';
+    if (name.includes('business')) return '💼';
+    if (name.includes('laptop') || name.includes('computer') || name.includes('gadget')) return '💻';
+    if (name.includes('education') || name.includes('course')) return '🎓';
+    if (name.includes('wedding') || name.includes('marriage')) return '💒';
+    if (name.includes('bike') || name.includes('motorcycle')) return '🏍️';
+    return '🎯'; // Default target emoji
+  };
+
   const handleAddGoal = () => {
     if (!newGoal.title.trim() || !newGoal.target || !newGoal.deadline) {
       Alert.alert('Missing Information', 'Please fill in all fields');
       return;
     }
 
-    const goal: Goal = {
-      id: Date.now().toString(),
-      title: newGoal.title,
-      emoji: newGoal.selectedCategory.emoji,
-      current: 0,
-      target: parseInt(newGoal.target),
-      deadline: newGoal.deadline,
-      category: newGoal.selectedCategory.id,
-    };
-
-    setGoals(prev => [...prev, goal]);
+    // In a real app, you would make an API call to create the goal
+    // For now, we'll just refresh the goals list
     setShowAddModal(false);
     setNewGoal({
       title: '',
@@ -109,11 +145,15 @@ export default function GoalsScreen() {
       deadline: '',
       selectedCategory: goalCategories[0],
     });
+    
+    // Refresh goals after adding
+    fetchGoals();
   };
 
   const getTotalProgress = () => {
-    const totalCurrent = goals.reduce((sum, goal) => sum + goal.current, 0);
-    const totalTarget = goals.reduce((sum, goal) => sum + goal.target, 0);
+    if (goals.length === 0) return 0;
+    const totalCurrent = goals.reduce((sum, goal) => sum + goal.current_amount, 0);
+    const totalTarget = goals.reduce((sum, goal) => sum + goal.target_amount, 0);
     return totalTarget > 0 ? Math.round((totalCurrent / totalTarget) * 100) : 0;
   };
 
@@ -121,9 +161,41 @@ export default function GoalsScreen() {
     router.push('/create-goal');
   };
 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.loadingText}>Loading your goals...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Target size={48} color={Colors.textMuted} />
+          <Text style={styles.errorTitle}>Oops! Something went wrong</Text>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={fetchGoals}>
+            <RefreshCw size={20} color={Colors.surface} />
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         {/* Header */}
         <View style={styles.header}>
           <View>
@@ -133,24 +205,26 @@ export default function GoalsScreen() {
         </View>
 
         {/* Overall Progress */}
-        <LinearGradient
-          colors={[Colors.gradientStart, Colors.gradientEnd]}
-          style={styles.progressCard}
-        >
-          <Text style={styles.progressTitle}>Overall Progress</Text>
-          <Text style={styles.progressPercentage}>{getTotalProgress()}%</Text>
-          <Text style={styles.progressSubtitle}>
-            {goals.length} active goals • Keep it up! 🔥
-          </Text>
-          <View style={styles.progressBarContainer}>
-            <View style={styles.progressBarBackground}>
-              <LinearGradient
-                colors={[Colors.accent, Colors.surface]}
-                style={[styles.progressBarFill, { width: `${getTotalProgress()}%` }]}
-              />
+        {goals.length > 0 && (
+          <LinearGradient
+            colors={[Colors.gradientStart, Colors.gradientEnd]}
+            style={styles.progressCard}
+          >
+            <Text style={styles.progressTitle}>Overall Progress</Text>
+            <Text style={styles.progressPercentage}>{getTotalProgress()}%</Text>
+            <Text style={styles.progressSubtitle}>
+              {goals.length} active goal{goals.length !== 1 ? 's' : ''} • Keep it up! 🔥
+            </Text>
+            <View style={styles.progressBarContainer}>
+              <View style={styles.progressBarBackground}>
+                <LinearGradient
+                  colors={[Colors.accent, Colors.surface]}
+                  style={[styles.progressBarFill, { width: `${getTotalProgress()}%` }]}
+                />
+              </View>
             </View>
-          </View>
-        </LinearGradient>
+          </LinearGradient>
+        )}
 
         {/* Goals List */}
         <View style={styles.section}>
@@ -166,25 +240,25 @@ export default function GoalsScreen() {
           </View>
 
           {goals.map((goal) => (
-            <TouchableOpacity key={goal.id} style={styles.goalCard}>
+            <TouchableOpacity key={goal.goal_id} style={styles.goalCard}>
               <View style={styles.goalHeader}>
                 <View style={styles.goalInfo}>
-                  <Text style={styles.goalEmoji}>{goal.emoji}</Text>
+                  <Text style={styles.goalEmoji}>{getGoalEmoji(goal.goal_name)}</Text>
                   <View style={styles.goalDetails}>
-                    <Text style={styles.goalTitle}>{goal.title}</Text>
+                    <Text style={styles.goalTitle}>{goal.goal_name}</Text>
                     <View style={styles.goalMeta}>
                       <Text style={styles.goalAmount}>
-                        {formatCurrency(goal.current)} of {formatCurrency(goal.target)}
+                        {formatCurrency(goal.current_amount)} of {formatCurrency(goal.target_amount)}
                       </Text>
                       <Text style={styles.goalDeadline}>
-                        📅 {goal.deadline}
+                        📅 {formatDate(goal.target_date)}
                       </Text>
                     </View>
                   </View>
                 </View>
                 <View style={styles.goalAction}>
                   <Text style={styles.goalPercentage}>
-                    {Math.round(getProgressPercentage(goal.current, goal.target))}%
+                    {Math.round(getProgressPercentage(goal.current_amount, goal.target_amount))}%
                   </Text>
                   <ChevronRight size={16} color={Colors.textMuted} />
                 </View>
@@ -195,19 +269,27 @@ export default function GoalsScreen() {
                   colors={[Colors.accent, Colors.primary]}
                   style={[
                     styles.progressFill,
-                    { width: `${getProgressPercentage(goal.current, goal.target)}%` },
+                    { width: `${getProgressPercentage(goal.current_amount, goal.target_amount)}%` },
                   ]}
                 />
               </View>
 
               <View style={styles.goalFooter}>
                 <Text style={styles.goalRemaining}>
-                  ₹{(goal.target - goal.current).toLocaleString('en-IN')} left to go
+                  ₹{(goal.target_amount - goal.current_amount).toLocaleString('en-IN')} left to go
                 </Text>
-                <TouchableOpacity style={styles.editButton}>
-                  <Edit size={14} color={Colors.primary} />
-                  <Text style={styles.editText}>Edit</Text>
-                </TouchableOpacity>
+                <View style={styles.goalStatus}>
+                  {goal.fund_decided === 'True' ? (
+                    <View style={styles.fundDecidedBadge}>
+                      <Text style={styles.fundDecidedText}>Fund Selected ✓</Text>
+                    </View>
+                  ) : (
+                    <TouchableOpacity style={styles.editButton}>
+                      <TrendingUp size={14} color={Colors.primary} />
+                      <Text style={styles.editText}>Select Fund</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
             </TouchableOpacity>
           ))}
@@ -231,12 +313,14 @@ export default function GoalsScreen() {
         </View>
 
         {/* Motivational Card */}
-        <View style={styles.motivationCard}>
-          <Text style={styles.motivationTitle}>💪 You're doing great!</Text>
-          <Text style={styles.motivationText}>
-            Every small step counts. Keep adding to your goals regularly and watch them grow! 🌱
-          </Text>
-        </View>
+        {goals.length > 0 && (
+          <View style={styles.motivationCard}>
+            <Text style={styles.motivationTitle}>💪 You're doing great!</Text>
+            <Text style={styles.motivationText}>
+              Every small step counts. Keep adding to your goals regularly and watch them grow! 🌱
+            </Text>
+          </View>
+        )}
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
@@ -348,6 +432,46 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  loadingText: {
+    ...Typography.body,
+    color: Colors.textMuted,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    gap: 16,
+  },
+  errorTitle: {
+    ...Typography.h2,
+    color: Colors.textDark,
+    textAlign: 'center',
+  },
+  errorText: {
+    ...Typography.body,
+    color: Colors.textMuted,
+    textAlign: 'center',
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 20,
+    gap: 8,
+  },
+  retryButtonText: {
+    ...Typography.bodySemiBold,
+    color: Colors.surface,
+  },
   header: {
     paddingHorizontal: 24,
     paddingVertical: 16,
@@ -450,6 +574,7 @@ const styles = StyleSheet.create({
     ...Typography.bodySemiBold,
     color: Colors.textDark,
     marginBottom: 4,
+    textTransform: 'capitalize',
   },
   goalMeta: {
     gap: 4,
@@ -488,6 +613,21 @@ const styles = StyleSheet.create({
   goalRemaining: {
     ...Typography.caption,
     color: Colors.textMuted,
+  },
+  goalStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  fundDecidedBadge: {
+    backgroundColor: Colors.success,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  fundDecidedText: {
+    ...Typography.small,
+    color: Colors.surface,
+    fontWeight: '600',
   },
   editButton: {
     flexDirection: 'row',
