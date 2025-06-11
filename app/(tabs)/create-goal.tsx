@@ -22,7 +22,10 @@ import {
   Calendar,
   PiggyBank,
   ArrowLeft,
-  Sparkles
+  Sparkles,
+  TrendingUp,
+  CheckCircle,
+  Star
 } from 'lucide-react-native';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -40,6 +43,22 @@ interface GoalData {
   amount_saved: string;
 }
 
+interface FundRecommendation {
+  fund_name: string;
+  sip: number;
+}
+
+interface FundRecommendationResponse {
+  goal_id: number;
+  recommendation: FundRecommendation[];
+}
+
+interface CreateGoalResponse {
+  result: string;
+  Message: string;
+  Goal_ID: number;
+}
+
 export default function CreateGoalScreen() {
   const router = useRouter();
   const { phoneNumber } = useAuth();
@@ -55,6 +74,10 @@ export default function CreateGoalScreen() {
   const [suggestedGoals, setSuggestedGoals] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
+  const [fundRecommendations, setFundRecommendations] = useState<FundRecommendation[]>([]);
+  const [selectedFund, setSelectedFund] = useState<FundRecommendation | null>(null);
+  const [showRecommendations, setShowRecommendations] = useState(false);
+  const [goalId, setGoalId] = useState<number | null>(null);
 
   const chatFlow = [
     {
@@ -117,6 +140,10 @@ export default function CreateGoalScreen() {
       amount_saved: '',
     });
     setLoading(false);
+    setShowRecommendations(false);
+    setFundRecommendations([]);
+    setSelectedFund(null);
+    setGoalId(null);
     
     // Load initial data
     fetchGoalSuggestions();
@@ -141,6 +168,44 @@ export default function CreateGoalScreen() {
         "First Home",
         "Dream car"
       ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchFundRecommendations = async (goalId: number) => {
+    try {
+      setLoading(true);
+      const response = await fetch('https://fin-advisor-ashokkumar5.replit.app/fund_recommendation', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data: FundRecommendationResponse = await response.json();
+        console.log('📈 Fund recommendations received:', data);
+        
+        if (data.recommendation && data.recommendation.length > 0) {
+          setFundRecommendations(data.recommendation);
+          setGoalId(goalId);
+          setShowRecommendations(true);
+          
+          addBotMessage("🎯 Perfect! Based on your goal, I've found some great investment options for you. Choose the one that feels right!");
+        } else {
+          throw new Error('No recommendations available');
+        }
+      } else {
+        throw new Error('Failed to fetch recommendations');
+      }
+    } catch (error) {
+      console.error('❌ Error fetching fund recommendations:', error);
+      addBotMessage("🎉 Your goal has been created successfully! You can view and manage it in the Goals tab. Let's go crush this goal! 💪");
+      
+      setTimeout(() => {
+        router.back();
+      }, 2000);
     } finally {
       setLoading(false);
     }
@@ -225,14 +290,19 @@ export default function CreateGoalScreen() {
   };
 
   const handleSavingsInput = () => {
-    if (!textInput.trim() || isNaN(Number(textInput)) || Number(textInput) <= 0) {
-      Alert.alert('Invalid Amount', 'Please enter a valid amount');
+    const amount = textInput.trim() || '0';
+    
+    if (isNaN(Number(amount)) || Number(amount) < 0) {
+      Alert.alert('Invalid Amount', 'Please enter a valid amount (or leave empty for 0)');
       return;
     }
-         
-    const formattedAmount = `₹${Number(textInput).toLocaleString('en-IN')}`;
+    
+    const formattedAmount = Number(amount) > 0 
+      ? `₹${Number(amount).toLocaleString('en-IN')}` 
+      : 'Starting fresh! ₹0';
+    
     addUserMessage(formattedAmount);
-    setGoalData(prev => ({ ...prev, amount_saved: textInput }));   
+    setGoalData(prev => ({ ...prev, amount_saved: amount }));
     setTextInput('');
     
     setTimeout(() => {
@@ -272,9 +342,6 @@ export default function CreateGoalScreen() {
       };
       
       console.log('🚀 Creating goal with payload:', payload);
-      console.log('🚀 Target amount (parsed):', targetAmount);
-      console.log('🚀 Current amount (parsed):', currentAmount);
-      console.log('🚀 Current user:', phoneNumber);
       
       const response = await fetch('https://fin-advisor-ashokkumar5.replit.app/create_goal', {
         method: 'POST',
@@ -290,13 +357,24 @@ export default function CreateGoalScreen() {
         const responseText = await response.text();
         console.log('✅ Goal created successfully:', responseText);
         
-        setTimeout(() => {
-          addBotMessage("🎉 Your goal has been created successfully! You're one step closer to making it happen. Let's go crush this goal! 💪");
+        try {
+          const data: CreateGoalResponse = JSON.parse(responseText);
+          
+          if (data.result === 'Success' && data.Goal_ID) {
+            console.log('🎯 Goal created with ID:', data.Goal_ID);
+            // Fetch fund recommendations
+            await fetchFundRecommendations(data.Goal_ID);
+          } else {
+            throw new Error('Invalid response format');
+          }
+        } catch (parseError) {
+          console.log('⚠️ Response parsing failed, but goal likely created');
+          addBotMessage("🎉 Your goal has been created successfully! You can view and manage it in the Goals tab. Let's go crush this goal! 💪");
           
           setTimeout(() => {
             router.back();
           }, 2000);
-        }, 2000);
+        }
       } else {
         const errorText = await response.text();
         console.error('❌ API Error:', response.status, errorText);
@@ -315,6 +393,27 @@ export default function CreateGoalScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFundSelection = (fund: FundRecommendation) => {
+    setSelectedFund(fund);
+  };
+
+  const handleStartInvesting = () => {
+    if (!selectedFund) {
+      Alert.alert('Please select a fund', 'Choose one of the recommended funds to proceed.');
+      return;
+    }
+
+    addBotMessage(`Excellent choice! 🎉 You've selected ${selectedFund.fund_name} with a SIP of ₹${selectedFund.sip.toLocaleString('en-IN')}. Your investment journey begins now! 🚀`);
+    
+    setTimeout(() => {
+      addBotMessage("Your goal and investment plan are all set up! You can track your progress in the Goals tab. Time to make your money work for you! 💪✨");
+      
+      setTimeout(() => {
+        router.back();
+      }, 2000);
+    }, 1500);
   };
 
   const moveToGoalSelection = () => {
@@ -442,8 +541,67 @@ export default function CreateGoalScreen() {
               )}
             </View>
           )}
+
+          {/* Fund Recommendations */}
+          {showRecommendations && (
+            <View style={styles.recommendationsContainer}>
+              <Text style={styles.recommendationsTitle}>💡 Recommended Investment Options</Text>
+              <Text style={styles.recommendationsSubtitle}>
+                Based on your goal, here are the best funds to help you achieve it:
+              </Text>
+              
+              <View style={styles.fundsContainer}>
+                {fundRecommendations.map((fund, index) => (
+                  <TouchableOpacity
+                    key={`fund-${index}`}
+                    style={[
+                      styles.fundCard,
+                      selectedFund?.fund_name === fund.fund_name && styles.selectedFundCard
+                    ]}
+                    onPress={() => handleFundSelection(fund)}
+                  >
+                    <View style={styles.fundHeader}>
+                      <View style={styles.fundIconContainer}>
+                        <TrendingUp size={24} color={Colors.primary} />
+                      </View>
+                      <View style={styles.fundInfo}>
+                        <Text style={styles.fundName}>{fund.fund_name}</Text>
+                        <Text style={styles.fundSip}>
+                          Recommended SIP: ₹{fund.sip.toLocaleString('en-IN')}/month
+                        </Text>
+                      </View>
+                      {selectedFund?.fund_name === fund.fund_name && (
+                        <CheckCircle size={24} color={Colors.success} />
+                      )}
+                    </View>
+                    
+                    <View style={styles.fundFeatures}>
+                      <View style={styles.fundFeature}>
+                        <Star size={16} color={Colors.warning} />
+                        <Text style={styles.fundFeatureText}>Professional Management</Text>
+                      </View>
+                      <View style={styles.fundFeature}>
+                        <Target size={16} color={Colors.primary} />
+                        <Text style={styles.fundFeatureText}>Goal-Aligned Strategy</Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {selectedFund && (
+                <TouchableOpacity
+                  style={styles.startInvestingButton}
+                  onPress={handleStartInvesting}
+                >
+                  <TrendingUp size={20} color={Colors.surface} />
+                  <Text style={styles.startInvestingButtonText}>Start Investing</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
           
-          {loading && currentStep === 5 && (
+          {loading && currentStep === 5 && !showRecommendations && (
             <View style={styles.creatingContainer}>
               <ActivityIndicator size="large" color={Colors.surface} />
               <Text style={styles.creatingText}>Creating your goal...</Text>
@@ -679,6 +837,95 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     ...Typography.body,
     color: Colors.textDark,
+  },
+  recommendationsContainer: {
+    marginTop: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    padding: 20,
+    borderRadius: 16,
+  },
+  recommendationsTitle: {
+    ...Typography.bodySemiBold,
+    color: Colors.surface,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  recommendationsSubtitle: {
+    ...Typography.caption,
+    color: 'rgba(255, 255, 255, 0.8)',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  fundsContainer: {
+    gap: 16,
+    marginBottom: 24,
+  },
+  fundCard: {
+    backgroundColor: Colors.surface,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    ...Shadows.small,
+  },
+  selectedFundCard: {
+    borderColor: Colors.success,
+    backgroundColor: '#f0f9ff',
+  },
+  fundHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  fundIconContainer: {
+    width: 48,
+    height: 48,
+    backgroundColor: Colors.background,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  fundInfo: {
+    flex: 1,
+  },
+  fundName: {
+    ...Typography.bodySemiBold,
+    color: Colors.textDark,
+    marginBottom: 4,
+  },
+  fundSip: {
+    ...Typography.caption,
+    color: Colors.primary,
+    fontWeight: '600',
+  },
+  fundFeatures: {
+    gap: 8,
+  },
+  fundFeature: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  fundFeatureText: {
+    ...Typography.caption,
+    color: Colors.textMuted,
+  },
+  startInvestingButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.success,
+    paddingVertical: 16,
+    borderRadius: 25,
+    gap: 8,
+    ...Shadows.medium,
+  },
+  startInvestingButtonText: {
+    ...Typography.bodySemiBold,
+    color: Colors.surface,
+    fontSize: 18,
   },
   inputContainer: {
     flexDirection: 'row',
