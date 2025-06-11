@@ -15,21 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Shadows } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
-import { 
-  Plus, 
-  TrendingUp, 
-  TrendingDown,
-  Eye,
-  EyeOff,
-  Filter,
-  X,
-  DollarSign,
-  Calendar,
-  Percent,
-  RefreshCw,
-  BarChart3,
-  PieChart
-} from 'lucide-react-native';
+import { Plus, TrendingUp, TrendingDown, Eye, EyeOff, Filter, X, DollarSign, Calendar, Percent, RefreshCw, ChartBar as BarChart3, ChartPie as PieChart } from 'lucide-react-native';
 
 interface Investment {
   fund_name: string;
