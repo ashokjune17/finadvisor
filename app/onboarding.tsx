@@ -246,29 +246,15 @@ export default function OnboardingScreen() {
         
         console.log('✅ User onboarded successfully:', data);
         
-        // Check the result value to determine next action
-        if (data.result === 'Risk') {
-          // User needs to go to home tab for additional setup
-          console.log('🏠 Redirecting to home tab for additional setup');
-          
-          setTimeout(() => {
-            addBotMessage("🎉 Great! Your profile is set up. Let's get you started with your financial journey! 💪✨");
-            
-            setTimeout(() => {
-              // Navigate to home tab instead of main tabs
-              router.replace('/(tabs)');
-            }, 2000);
-          }, 1000);
-        } else {
-          // Standard success flow
-          setTimeout(() => {
-            addBotMessage("🎉 Welcome aboard! Your financial journey starts now. Let's make your money work harder than you do! 💪✨");
-            
-            setTimeout(() => {
-              router.replace('/(tabs)');
-            }, 2000);
-          }, 1000);
-        }
+        // Always show success message first
+        addBotMessage("🎉 Welcome aboard! Your financial journey starts now. Let's make your money work harder than you do! 💪✨");
+        
+        // Navigate to home after a short delay, regardless of result
+        setTimeout(() => {
+          console.log('🏠 Navigating to home tab');
+          router.replace('/(tabs)');
+        }, 2000);
+        
       } else {
         console.error('❌ API Error - Status:', response.status);
         console.error('❌ API Error - Response:', responseText);
