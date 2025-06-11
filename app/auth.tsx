@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  KeyboardAvoidingView,
   Platform,
   Animated,
   Alert,
@@ -119,13 +118,11 @@ export default function AuthScreen() {
               {
                 text: 'Continue',
                 onPress: () => {
-                  // TODO: Navigate to onboarding starting from risk questions
-                  // For now, we'll go to full onboarding - you can modify this later
                   router.push({
                     pathname: '/onboarding',
                     params: { 
                       phoneNumber: cleanPhone,
-                      startFrom: 'risk' // This can be used to skip to risk questions
+                      startFrom: 'risk'
                     }
                   });
                 }
@@ -212,14 +209,8 @@ export default function AuthScreen() {
     // Limit to 10 digits
     const limited = cleaned.slice(0, 10);
     if (limited.length >= 5) {
-      return  `${limited.slice(0, 5)} ${limited.slice(5)}`
+      return `${limited.slice(0, 5)} ${limited.slice(5)}`;
     }
-    // // Format as XXX XXX XXXX
-    // if (limited.length >= 6) {
-    //   return `${limited.slice(0, 3)} ${limited.slice(3, 6)} ${limited.slice(6)}`;
-    // } else if (limited.length >= 3) {
-    //   return `${limited.slice(0, 3)} ${limited.slice(3)}`;
-    // }
     
     return limited;
   };
@@ -235,10 +226,7 @@ export default function AuthScreen() {
         colors={[Colors.gradientStart, Colors.gradientEnd]}
         style={styles.gradient}
       >
-        <KeyboardAvoidingView 
-          style={styles.keyboardView}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
+        <View style={styles.keyboardView}>
           <Animated.View 
             style={[
               styles.content,
@@ -335,7 +323,7 @@ export default function AuthScreen() {
               </Text>
             </View>
           </Animated.View>
-        </KeyboardAvoidingView>
+        </View>
       </LinearGradient>
     </SafeAreaView>
   );

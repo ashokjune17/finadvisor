@@ -5,7 +5,7 @@ export default function IndexScreen() {
   const router = useRouter();
 
   useEffect(() => {
-    // Start with the auth screen instead of onboarding
+    // Start with the auth screen for user authentication
     router.replace('/auth');
   }, []);
 
