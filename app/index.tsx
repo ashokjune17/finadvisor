@@ -5,9 +5,8 @@ export default function IndexScreen() {
   const router = useRouter();
 
   useEffect(() => {
-    // For demo purposes, always start with onboarding
-    // In a real app, you'd check if user has completed onboarding
-    router.replace('/onboarding');
+    // Start with the auth screen instead of onboarding
+    router.replace('/auth');
   }, []);
 
   return null;

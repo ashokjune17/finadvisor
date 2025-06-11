@@ -14,10 +14,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Colors, Shadows } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
-import { ChevronRight, Target, DollarSign, TrendingUp, Smartphone, Heart, Calendar, CreditCard } from 'lucide-react-native';
+import { ChevronRight, Target, DollarSign, TrendingUp, Calendar, CreditCard } from 'lucide-react-native';
 
 interface ChatMessage {
   id: string;
@@ -45,6 +45,7 @@ interface UserData {
 
 export default function OnboardingScreen() {
   const router = useRouter();
+  const { phoneNumber } = useLocalSearchParams<{ phoneNumber: string }>();
   const [currentStep, setCurrentStep] = useState(0);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [textInput, setTextInput] = useState('');
@@ -52,7 +53,7 @@ export default function OnboardingScreen() {
   const [userData, setUserData] = useState<UserData>({
     name: '',
     dob: '',
-    mobile: '',
+    mobile: phoneNumber || '',
     goals: [],
     riskTolerance: '',
     income: '',
@@ -67,12 +68,6 @@ export default function OnboardingScreen() {
       id: 'welcome',
       message: "Hey there, money wizard 🪄 Ready to glow up your finances?",
       options: ["Let's do this! 🚀", "Tell me more first 🤔"],
-    },
-    {
-      id: 'mobile',
-      message: "Let's get started! What's your mobile number? 📱",
-      type: 'mobile',
-      placeholder: 'Enter your mobile number...',
     },
     {
       id: 'name',
@@ -220,7 +215,6 @@ export default function OnboardingScreen() {
       });
 
       console.log('📡 Response status:', response.status);
-      console.log('📡 Response headers:', response.headers);
 
       const responseText = await response.text();
       console.log('📡 Raw response:', responseText);
@@ -427,24 +421,6 @@ export default function OnboardingScreen() {
     }, 1000);
   };
 
-  const handleMobileSubmit = () => {
-    if (!textInput.trim() || textInput.length < 10) {
-      Alert.alert('Invalid Number', 'Please enter a valid mobile number');
-      return;
-    }
-    
-    addUserMessage(textInput);
-    setUserData(prev => ({ ...prev, mobile: textInput }));
-    setTextInput('');
-    
-    // Move directly to next step without OTP verification
-    setTimeout(() => {
-      setCurrentStep(prev => prev + 1);
-      const nextFlow = onboardingFlow[currentStep + 1];
-      addBotMessage(nextFlow.message, nextFlow.options);
-    }, 1000);
-  };
-
   const handleGoalsDone = () => {
     if (userData.goals.length > 0) {
       setTimeout(() => {
@@ -457,7 +433,6 @@ export default function OnboardingScreen() {
 
   const currentFlow = onboardingFlow[currentStep];
   const isTextInput = currentFlow?.type === 'input';
-  const isMobileInput = currentFlow?.type === 'mobile';
   const isIncomeInput = currentFlow?.type === 'income';
   const isDobInput = currentFlow?.type === 'dob';
   const isPanInput = currentFlow?.type === 'pan';
@@ -564,32 +539,6 @@ export default function OnboardingScreen() {
               <TouchableOpacity
                 style={styles.sendButton}
                 onPress={handleTextSubmit}
-              >
-                <ChevronRight size={20} color={Colors.surface} />
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {/* Mobile input */}
-          {isMobileInput && (
-            <View style={styles.inputContainer}>
-              <View style={styles.mobileInputContainer}>
-                <Smartphone size={20} color={Colors.textMuted} />
-                <TextInput
-                  value={textInput}
-                  onChangeText={setTextInput}
-                  placeholder={currentFlow.placeholder}
-                  style={styles.mobileInput}
-                  onSubmitEditing={handleMobileSubmit}
-                  returnKeyType="send"
-                  keyboardType="phone-pad"
-                  placeholderTextColor={Colors.textMuted}
-                  maxLength={10}
-                />
-              </View>
-              <TouchableOpacity
-                style={styles.sendButton}
-                onPress={handleMobileSubmit}
               >
                 <ChevronRight size={20} color={Colors.surface} />
               </TouchableOpacity>
@@ -791,21 +740,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 20,
-    ...Typography.body,
-    color: Colors.textDark,
-  },
-  mobileInputContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 20,
-    gap: 8,
-  },
-  mobileInput: {
-    flex: 1,
     ...Typography.body,
     color: Colors.textDark,
   },
