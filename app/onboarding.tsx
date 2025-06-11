@@ -188,18 +188,18 @@ export default function OnboardingScreen() {
     setMessages(prev => [...prev, newMessage]);
   };
 
-  const submitUserData = async () => {
+  const submitUserData = async (finalUserData: UserData) => {
     try {
       setLoading(true);
       
       const payload = {
-        name: userData.name,
-        dob: userData.dob,
-        marital_status: userData.socialStatus,
-        income: parseInt(userData.income),
-        pan: userData.pan.toUpperCase(),
+        name: finalUserData.name,
+        dob: finalUserData.dob,
+        marital_status: finalUserData.socialStatus,
+        income: parseInt(finalUserData.income),
+        pan: finalUserData.pan.toUpperCase(),
         risk_questions: {
-          items: userData.riskQuestions
+          items: finalUserData.riskQuestions
         }
       };
 
@@ -289,28 +289,50 @@ export default function OnboardingScreen() {
       // Don't advance immediately for multi-select
       return;
     } else if (currentFlow.id === 'risk') {
-      setUserData(prev => ({ 
-        ...prev, 
+      const updatedUserData = { 
+        ...userData, 
         riskTolerance: option,
-        riskQuestions: [...prev.riskQuestions, {
+        riskQuestions: [...userData.riskQuestions, {
           question: currentFlow.message,
           answer: option
         }]
-      }));
+      };
+      setUserData(updatedUserData);
     } else if (currentFlow.id === 'social_status') {
-      setUserData(prev => ({ ...prev, socialStatus: option }));
+      const updatedUserData = { ...userData, socialStatus: option };
+      setUserData(updatedUserData);
     } else if (currentFlow.id.startsWith('risk_')) {
       // Add risk question and answer to the array
-      setUserData(prev => ({
-        ...prev,
-        riskQuestions: [...prev.riskQuestions, {
+      const updatedUserData = {
+        ...userData,
+        riskQuestions: [...userData.riskQuestions, {
           question: currentFlow.message,
           answer: option
         }]
-      }));
+      };
+      setUserData(updatedUserData);
+      
+      // If this is the last risk question (risk_4), we need to handle completion specially
+      if (currentFlow.id === 'risk_4') {
+        setTimeout(() => {
+          if (currentStep < onboardingFlow.length - 1) {
+            setCurrentStep(prev => prev + 1);
+            const nextFlow = onboardingFlow[currentStep + 1];
+            
+            if (nextFlow.type === 'completing') {
+              // Start the completion process with the updated user data
+              addBotMessage(nextFlow.message);
+              submitUserData(updatedUserData);
+            } else {
+              addBotMessage(nextFlow.message, nextFlow.options);
+            }
+          }
+        }, 1000);
+        return;
+      }
     }
     
-    // Move to next step
+    // Move to next step for all other cases
     setTimeout(() => {
       if (currentStep < onboardingFlow.length - 1) {
         setCurrentStep(prev => prev + 1);
@@ -319,7 +341,7 @@ export default function OnboardingScreen() {
         if (nextFlow.type === 'completing') {
           // Start the completion process
           addBotMessage(nextFlow.message);
-          submitUserData();
+          submitUserData(userData);
         } else {
           addBotMessage(nextFlow.message, nextFlow.options);
         }
