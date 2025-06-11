@@ -137,7 +137,7 @@ export default function AuthScreen() {
           try {
             // Try to get user profile for welcome message
             const profileResponse = await fetch(`https://fin-advisor-ashokkumar5.replit.app/home?phone_number=${cleanPhone}`);
-            
+            console.log('profileResponse')
             if (profileResponse.ok) {
               const profileData = await profileResponse.json();
               const userName = profileData.Profile?.name || 'there';
