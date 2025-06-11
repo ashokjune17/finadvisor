@@ -9,6 +9,8 @@ import {
   Alert,
   ActivityIndicator,
   Animated,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -172,48 +174,10 @@ export default function OnboardingScreen() {
     setCurrentStep(0);
     setMessages([]);
     setTextInput('');
-    setGoalData({
-      name: '',
-      target_amount: '',
-      target_date: '',
-      amount_saved: '',
-    });
     setLoading(false);
-    
-    // Load initial data
-    fetchGoalSuggestions();
-    loadUserPhoneNumber();
     
     // Add welcome message
     addBotMessage(onboardingFlow[0].message, onboardingFlow[0].options);
-  };
-
-  const loadUserPhoneNumber = () => {
-    // In a real app, you would get this from AsyncStorage, Redux, or context
-    // For now, we'll use a placeholder. You should implement proper user data persistence
-    const cachedPhoneNumber = '7406189782'; // This should come from your user storage
-    setUserPhoneNumber(cachedPhoneNumber);
-  };
-
-  const fetchGoalSuggestions = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('https://fin-advisor-ashokkumar5.replit.app/finadvisor/goal_suggesstion');
-      const data = await response.json();
-      setSuggestedGoals(data.goals || []);
-    } catch (error) {
-      console.error('Error fetching goal suggestions:', error);
-      // Fallback suggestions if API fails
-      setSuggestedGoals([
-        "Retirement",
-        "Emergency fund", 
-        "Dream vacation",
-        "First Home",
-        "Dream car"
-      ]);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const addBotMessage = (content: string, options?: string[]) => {
