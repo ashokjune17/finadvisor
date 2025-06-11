@@ -138,18 +138,10 @@ export default function AuthScreen() {
         case 'Risk':
           // User completed onboarding - go to main app
           console.log('✅ User fully onboarded - going to main app');
-          Alert.alert(
-            'Welcome Back! 🎉',
-            'Ready to continue your financial journey?',
-            [
-              {
-                text: 'Let\'s Go!',
-                onPress: () => {
-                  router.replace('/(tabs)');
-                }
-              }
-            ]
-          );
+          setTimeout(() => {
+            console.log('🏠 Navigating to home tab');
+            router.replace('/(tabs)');
+          }, 2000);
           break;
 
         default:
