@@ -108,7 +108,7 @@ export default function CreateGoalScreen() {
   const loadUserPhoneNumber = () => {
     // In a real app, you would get this from AsyncStorage, Redux, or context
     // For now, we'll use a placeholder. You should implement proper user data persistence
-    const cachedPhoneNumber = '7894561230'; // This should come from your user storage
+    const cachedPhoneNumber = '7406189782'; // This should come from your user storage
     setUserPhoneNumber(cachedPhoneNumber);
   };
 
