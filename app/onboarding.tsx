@@ -10,13 +10,14 @@ import {
   Platform,
   Animated,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Colors, Shadows } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
-import { ChevronRight, Target, DollarSign, TrendingUp, Smartphone, Heart } from 'lucide-react-native';
+import { ChevronRight, Target, DollarSign, TrendingUp, Smartphone, Heart, Calendar, CreditCard } from 'lucide-react-native';
 
 interface ChatMessage {
   id: string;
@@ -27,12 +28,13 @@ interface ChatMessage {
 
 interface UserData {
   name: string;
-  age: string;
+  dob: string;
   mobile: string;
   goals: string[];
   riskTolerance: string;
   income: string;
   socialStatus: string;
+  pan: string;
 }
 
 export default function OnboardingScreen() {
@@ -40,14 +42,16 @@ export default function OnboardingScreen() {
   const [currentStep, setCurrentStep] = useState(0);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [textInput, setTextInput] = useState('');
+  const [loading, setLoading] = useState(false);
   const [userData, setUserData] = useState<UserData>({
     name: '',
-    age: '',
+    dob: '',
     mobile: '',
     goals: [],
     riskTolerance: '',
     income: '',
     socialStatus: '',
+    pan: '',
   });
   const [fadeAnim] = useState(new Animated.Value(0));
 
@@ -70,11 +74,17 @@ export default function OnboardingScreen() {
       placeholder: 'Your name...',
     },
     {
-      id: 'age',
-      message: "Nice to meet you! How old are you? This helps me suggest the right investment timeline 📊",
-      type: 'input',
-      placeholder: 'Your age...',
-    }, 
+      id: 'dob',
+      message: "When's your birthday? 🎂 This helps me suggest the right investment timeline",
+      type: 'dob',
+      placeholder: 'YYYY-MM-DD (e.g., 1995-06-15)',
+    },
+    {
+      id: 'pan',
+      message: "What's your PAN number? 🆔 This is required for investment compliance",
+      type: 'pan',
+      placeholder: 'Enter your PAN number (e.g., ABCDE1234F)',
+    },
     {
       id: 'income',
       message: "What's your monthly income? (This stays private, obvs 🔒)",
@@ -140,7 +150,7 @@ export default function OnboardingScreen() {
     {
       id: 'complete',
       message: "Amazing! 🎉 I'm creating your personalized financial plan. Ready to see what your money can do?",
-      options: ["Show me my plan! ✨"],
+      type: 'completing',
     },
   ];
 
@@ -176,6 +186,62 @@ export default function OnboardingScreen() {
     setMessages(prev => [...prev, newMessage]);
   };
 
+  const submitUserData = async () => {
+    try {
+      setLoading(true);
+      
+      // Extract marital status from social status
+      let maritalStatus = 'Single';
+      if (userData.socialStatus.includes('Married')) {
+        maritalStatus = 'Married';
+      }
+      
+      const payload = {
+        phone_number: userData.mobile,
+        name: userData.name,
+        dob: userData.dob,
+        marital_status: maritalStatus,
+        income: parseInt(userData.income),
+        pan: userData.pan.toUpperCase(),
+      };
+
+      const response = await fetch('https://fin-advisor-ashokkumar5.replit.app/user_onboard', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('User onboarded successfully:', data);
+        
+        setTimeout(() => {
+          addBotMessage("🎉 Welcome aboard! Your financial journey starts now. Let's make your money work harder than you do! 💪✨");
+          
+          setTimeout(() => {
+            router.replace('/(tabs)');
+          }, 2000);
+        }, 1000);
+      } else {
+        throw new Error('Failed to onboard user');
+      }
+    } catch (error) {
+      console.error('Error onboarding user:', error);
+      Alert.alert(
+        'Oops!', 
+        'Something went wrong while setting up your account. Please try again.',
+        [
+          { text: 'Try Again', onPress: () => setCurrentStep(currentStep - 1) },
+          { text: 'Skip for now', onPress: () => router.replace('/(tabs)') }
+        ]
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleOptionSelect = (option: string) => {
     addUserMessage(option);
     
@@ -201,12 +267,14 @@ export default function OnboardingScreen() {
       if (currentStep < onboardingFlow.length - 1) {
         setCurrentStep(prev => prev + 1);
         const nextFlow = onboardingFlow[currentStep + 1];
-        addBotMessage(nextFlow.message, nextFlow.options);
-      } else {
-        // Complete onboarding
-        setTimeout(() => {
-          router.replace('/(tabs)');
-        }, 2000);
+        
+        if (nextFlow.type === 'completing') {
+          // Start the completion process
+          addBotMessage(nextFlow.message);
+          submitUserData();
+        } else {
+          addBotMessage(nextFlow.message, nextFlow.options);
+        }
       }
     }, 1000);
   };
@@ -219,10 +287,60 @@ export default function OnboardingScreen() {
     
     if (currentFlow.id === 'name') {
       setUserData(prev => ({ ...prev, name: textInput }));
-    } else if (currentFlow.id === 'age') {
-      setUserData(prev => ({ ...prev, age: textInput }));
     }
     
+    setTextInput('');
+    
+    setTimeout(() => {
+      if (currentStep < onboardingFlow.length - 1) {
+        setCurrentStep(prev => prev + 1);
+        const nextFlow = onboardingFlow[currentStep + 1];
+        addBotMessage(nextFlow.message, nextFlow.options);
+      }
+    }, 1000);
+  };
+
+  const handleDobSubmit = () => {
+    // Validate DOB format (YYYY-MM-DD)
+    const dobRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!textInput.trim() || !dobRegex.test(textInput)) {
+      Alert.alert('Invalid Date', 'Please enter date in YYYY-MM-DD format (e.g., 1995-06-15)');
+      return;
+    }
+    
+    // Validate if it's a valid date
+    const date = new Date(textInput);
+    const today = new Date();
+    if (isNaN(date.getTime()) || date >= today) {
+      Alert.alert('Invalid Date', 'Please enter a valid birth date');
+      return;
+    }
+    
+    addUserMessage(textInput);
+    setUserData(prev => ({ ...prev, dob: textInput }));
+    setTextInput('');
+    
+    setTimeout(() => {
+      if (currentStep < onboardingFlow.length - 1) {
+        setCurrentStep(prev => prev + 1);
+        const nextFlow = onboardingFlow[currentStep + 1];
+        addBotMessage(nextFlow.message, nextFlow.options);
+      }
+    }, 1000);
+  };
+
+  const handlePanSubmit = () => {
+    // Validate PAN format (5 letters, 4 digits, 1 letter)
+    const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+    const panUpper = textInput.trim().toUpperCase();
+    
+    if (!panUpper || !panRegex.test(panUpper)) {
+      Alert.alert('Invalid PAN', 'Please enter a valid PAN number (e.g., ABCDE1234F)');
+      return;
+    }
+    
+    addUserMessage(panUpper);
+    setUserData(prev => ({ ...prev, pan: panUpper }));
     setTextInput('');
     
     setTimeout(() => {
@@ -286,7 +404,10 @@ export default function OnboardingScreen() {
   const isTextInput = currentFlow?.type === 'input';
   const isMobileInput = currentFlow?.type === 'mobile';
   const isIncomeInput = currentFlow?.type === 'income';
+  const isDobInput = currentFlow?.type === 'dob';
+  const isPanInput = currentFlow?.type === 'pan';
   const isMultiSelect = currentFlow?.multiSelect;
+  const isCompleting = currentFlow?.type === 'completing';
 
   return (
     <SafeAreaView style={styles.container}>
@@ -332,8 +453,16 @@ export default function OnboardingScreen() {
               </Animated.View>
             ))}
             
+            {/* Loading indicator for completion */}
+            {loading && isCompleting && (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={Colors.surface} />
+                <Text style={styles.loadingText}>Setting up your account...</Text>
+              </View>
+            )}
+            
             {/* Options */}
-            {currentFlow?.options && (
+            {currentFlow?.options && !loading && (
               <View style={styles.optionsContainer}>
                 {currentFlow.options.map((option, index) => (
                   <TouchableOpacity
@@ -406,6 +535,57 @@ export default function OnboardingScreen() {
               <TouchableOpacity
                 style={styles.sendButton}
                 onPress={handleMobileSubmit}
+              >
+                <ChevronRight size={20} color={Colors.surface} />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* DOB input */}
+          {isDobInput && (
+            <View style={styles.inputContainer}>
+              <View style={styles.dobInputContainer}>
+                <Calendar size={20} color={Colors.textMuted} />
+                <TextInput
+                  value={textInput}
+                  onChangeText={setTextInput}
+                  placeholder={currentFlow.placeholder}
+                  style={styles.dobInput}
+                  onSubmitEditing={handleDobSubmit}
+                  returnKeyType="send"
+                  placeholderTextColor={Colors.textMuted}
+                  maxLength={10}
+                />
+              </View>
+              <TouchableOpacity
+                style={styles.sendButton}
+                onPress={handleDobSubmit}
+              >
+                <ChevronRight size={20} color={Colors.surface} />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* PAN input */}
+          {isPanInput && (
+            <View style={styles.inputContainer}>
+              <View style={styles.panInputContainer}>
+                <CreditCard size={20} color={Colors.textMuted} />
+                <TextInput
+                  value={textInput}
+                  onChangeText={(text) => setTextInput(text.toUpperCase())}
+                  placeholder={currentFlow.placeholder}
+                  style={styles.panInput}
+                  onSubmitEditing={handlePanSubmit}
+                  returnKeyType="send"
+                  placeholderTextColor={Colors.textMuted}
+                  maxLength={10}
+                  autoCapitalize="characters"
+                />
+              </View>
+              <TouchableOpacity
+                style={styles.sendButton}
+                onPress={handlePanSubmit}
               >
                 <ChevronRight size={20} color={Colors.surface} />
               </TouchableOpacity>
@@ -500,6 +680,15 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.accent,
     color: Colors.surface,
   },
+  loadingContainer: {
+    alignItems: 'center',
+    paddingVertical: 32,
+    gap: 16,
+  },
+  loadingText: {
+    ...Typography.bodySemiBold,
+    color: Colors.surface,
+  },
   optionsContainer: {
     marginTop: 16,
     gap: 12,
@@ -561,6 +750,36 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   mobileInput: {
+    flex: 1,
+    ...Typography.body,
+    color: Colors.textDark,
+  },
+  dobInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 20,
+    gap: 8,
+  },
+  dobInput: {
+    flex: 1,
+    ...Typography.body,
+    color: Colors.textDark,
+  },
+  panInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 20,
+    gap: 8,
+  },
+  panInput: {
     flex: 1,
     ...Typography.body,
     color: Colors.textDark,
