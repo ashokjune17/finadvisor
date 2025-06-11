@@ -15,18 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Colors, Shadows } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
-import { 
-  ChevronRight, 
-  Target, 
-  DollarSign, 
-  Calendar,
-  PiggyBank,
-  ArrowLeft,
-  Sparkles,
-  TrendingUp,
-  CheckCircle,
-  Star
-} from 'lucide-react-native';
+import { ChevronRight, Target, DollarSign, Calendar, PiggyBank, ArrowLeft, Sparkles, TrendingUp, CircleCheck as CheckCircle, Star } from 'lucide-react-native';
 import { useAuth } from '@/hooks/useAuth';
 
 interface ChatMessage {
