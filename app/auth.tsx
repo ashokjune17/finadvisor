@@ -211,13 +211,15 @@ export default function AuthScreen() {
     
     // Limit to 10 digits
     const limited = cleaned.slice(0, 10);
-    
-    // Format as XXX XXX XXXX
-    if (limited.length >= 6) {
-      return `${limited.slice(0, 3)} ${limited.slice(3, 6)} ${limited.slice(6)}`;
-    } else if (limited.length >= 3) {
-      return `${limited.slice(0, 3)} ${limited.slice(3)}`;
+    if (limited.length >= 5) {
+      return  `${limited.slice(0, 5)} ${limited.slice(5)}`
     }
+    // // Format as XXX XXX XXXX
+    // if (limited.length >= 6) {
+    //   return `${limited.slice(0, 3)} ${limited.slice(3, 6)} ${limited.slice(6)}`;
+    // } else if (limited.length >= 3) {
+    //   return `${limited.slice(0, 3)} ${limited.slice(3)}`;
+    // }
     
     return limited;
   };
@@ -293,7 +295,7 @@ export default function AuthScreen() {
                   style={styles.phoneInput}
                   value={phoneNumber}
                   onChangeText={handlePhoneChange}
-                  placeholder="XXX XXX XXXX"
+                  placeholder="XXXXX XXXXX"
                   placeholderTextColor={Colors.textMuted}
                   keyboardType="phone-pad"
                   maxLength={12} // Formatted length
