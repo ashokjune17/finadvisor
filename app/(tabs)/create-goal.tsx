@@ -165,12 +165,19 @@ export default function CreateGoalScreen() {
   const fetchFundRecommendations = async (goalId: number) => {
     try {
       setLoading(true);
+      console.log('📈 Fetching fund recommendations for goal ID:', goalId);
+      
       const response = await fetch('https://fin-advisor-ashokkumar5.replit.app/fund_recommendation', {
-        method: 'GET',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          goal_id: goalId
+        }),
       });
+
+      console.log('📡 Fund recommendation response status:', response.status);
 
       if (response.ok) {
         const data: FundRecommendationResponse = await response.json();
@@ -186,6 +193,8 @@ export default function CreateGoalScreen() {
           throw new Error('No recommendations available');
         }
       } else {
+        const errorText = await response.text();
+        console.error('❌ Fund recommendation API error:', response.status, errorText);
         throw new Error('Failed to fetch recommendations');
       }
     } catch (error) {
@@ -351,7 +360,7 @@ export default function CreateGoalScreen() {
           
           if (data.result === 'Success' && data.Goal_ID) {
             console.log('🎯 Goal created with ID:', data.Goal_ID);
-            // Fetch fund recommendations
+            // Fetch fund recommendations using POST method
             await fetchFundRecommendations(data.Goal_ID);
           } else {
             throw new Error('Invalid response format');
