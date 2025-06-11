@@ -190,17 +190,11 @@ export default function OnboardingScreen() {
     try {
       setLoading(true);
       
-      // Extract marital status from social status
-      let maritalStatus = 'Single';
-      if (userData.socialStatus.includes('Married')) {
-        maritalStatus = 'Married';
-      }
-      
       const payload = {
         phone_number: userData.mobile,
         name: userData.name,
         dob: userData.dob,
-        marital_status: userData.socialStatus,
+        marital_status: userData.socialStatus, // Send as-is without conversion
         income: parseInt(userData.income),
         pan: userData.pan.toUpperCase(),
       };
