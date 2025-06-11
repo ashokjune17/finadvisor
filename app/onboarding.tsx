@@ -43,6 +43,11 @@ interface UserData {
   riskQuestions: RiskQuestion[];
 }
 
+interface OnboardingApiResponse {
+  result: string;
+  message?: string;
+}
+
 export default function OnboardingScreen() {
   const router = useRouter();
   const { phoneNumber } = useLocalSearchParams<{ phoneNumber: string }>();
@@ -231,23 +236,39 @@ export default function OnboardingScreen() {
       console.log('📡 Raw response:', responseText);
 
       if (response.ok) {
-        let data;
+        let data: OnboardingApiResponse;
         try {
           data = JSON.parse(responseText);
         } catch (parseError) {
           console.log('⚠️ Response is not JSON, treating as success');
-          data = { message: 'Success' };
+          data = { result: 'Success' };
         }
         
         console.log('✅ User onboarded successfully:', data);
         
-        setTimeout(() => {
-          addBotMessage("🎉 Welcome aboard! Your financial journey starts now. Let's make your money work harder than you do! 💪✨");
+        // Check the result value to determine next action
+        if (data.result === 'Risk') {
+          // User needs to go to home tab for additional setup
+          console.log('🏠 Redirecting to home tab for additional setup');
           
           setTimeout(() => {
-            router.replace('/(tabs)');
-          }, 2000);
-        }, 1000);
+            addBotMessage("🎉 Great! Your profile is set up. Let's get you started with your financial journey! 💪✨");
+            
+            setTimeout(() => {
+              // Navigate to home tab instead of main tabs
+              router.replace('/(tabs)');
+            }, 2000);
+          }, 1000);
+        } else {
+          // Standard success flow
+          setTimeout(() => {
+            addBotMessage("🎉 Welcome aboard! Your financial journey starts now. Let's make your money work harder than you do! 💪✨");
+            
+            setTimeout(() => {
+              router.replace('/(tabs)');
+            }, 2000);
+          }, 1000);
+        }
       } else {
         console.error('❌ API Error - Status:', response.status);
         console.error('❌ API Error - Response:', responseText);
