@@ -138,10 +138,11 @@ export default function AuthScreen() {
         case 'Risk':
           // User completed onboarding - go to main app
           console.log('✅ User fully onboarded - going to main app');
-          setTimeout(() => {
+          useEffect(() => {
+            // Navigate immediately when the component mounts
             console.log('🏠 Navigating to home tab');
             router.replace('/(tabs)');
-          }, 2000);
+          }, []);
           break;
 
         default:
