@@ -193,7 +193,6 @@ export default function OnboardingScreen() {
       setLoading(true);
       
       const payload = {
-        phone_number: userData.mobile,
         name: userData.name,
         dob: userData.dob,
         marital_status: userData.socialStatus,
