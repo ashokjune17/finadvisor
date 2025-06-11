@@ -18,6 +18,10 @@ import { Colors, Shadows } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { Smartphone, ChevronRight, Sparkles, Shield, TrendingUp, Target } from 'lucide-react-native';
 
+interface OnboardingResponse {
+  result: string;
+}
+
 export default function AuthScreen() {
   const router = useRouter();
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -48,6 +52,33 @@ export default function AuthScreen() {
     return cleanPhone.length === 10 && /^[6-9]/.test(cleanPhone);
   };
 
+  const checkOnboardingStatus = async (cleanPhone: string): Promise<string> => {
+    try {
+      const response = await fetch('https://fin-advisor-ashokkumar5.replit.app/onboarding', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          phone_number: cleanPhone,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status}`);
+      }
+
+      const data: OnboardingResponse = await response.json();
+      console.log('🔍 Onboarding status response:', data);
+      
+      return data.result;
+    } catch (error) {
+      console.error('❌ Error checking onboarding status:', error);
+      // Default to 'User Not Onboarded' on error to ensure user can proceed
+      return 'User Not Onboarded';
+    }
+  };
+
   const handleContinue = async () => {
     if (!validatePhoneNumber(phoneNumber)) {
       Alert.alert(
@@ -62,51 +93,113 @@ export default function AuthScreen() {
     try {
       // Clean the phone number
       const cleanPhone = phoneNumber.replace(/\D/g, '');
+      console.log('📱 Checking onboarding status for:', cleanPhone);
       
-      // Check if user exists by trying to fetch profile
-      const response = await fetch(`https://fin-advisor-ashokkumar5.replit.app/profile?phone_number=${cleanPhone}`);
-      
-      if (response.ok) {
-        const data = await response.json();
-        
-        if (data.result === 'Success' && data.Profile) {
-          // User exists, go directly to main app
-          Alert.alert(
-            'Welcome Back! 👋',
-            `Hi ${data.Profile.name}! Welcome back to your financial journey.`,
-            [
-              {
-                text: 'Continue',
-                onPress: () => {
-                  // Store phone number for app usage
-                  // In production, use AsyncStorage or secure storage
-                  router.replace('/(tabs)');
-                }
-              }
-            ]
-          );
-        } else {
-          // User doesn't exist, go to onboarding
+      // Check onboarding status
+      const onboardingStatus = await checkOnboardingStatus(cleanPhone);
+      console.log('📊 Onboarding status:', onboardingStatus);
+
+      switch (onboardingStatus) {
+        case 'User Not Onboarded':
+          // New user - start full onboarding
+          console.log('🆕 New user - starting full onboarding');
           router.push({
             pathname: '/onboarding',
             params: { phoneNumber: cleanPhone }
           });
-        }
-      } else {
-        // API error or user doesn't exist, go to onboarding
-        router.push({
-          pathname: '/onboarding',
-          params: { phoneNumber: cleanPhone }
-        });
+          break;
+
+        case 'Basic':
+          // User has basic info but needs risk assessment
+          console.log('⚡ User has basic info - starting from risk questions');
+          Alert.alert(
+            'Welcome Back! 👋',
+            'We need to complete your risk assessment to provide better recommendations.',
+            [
+              {
+                text: 'Continue',
+                onPress: () => {
+                  // TODO: Navigate to onboarding starting from risk questions
+                  // For now, we'll go to full onboarding - you can modify this later
+                  router.push({
+                    pathname: '/onboarding',
+                    params: { 
+                      phoneNumber: cleanPhone,
+                      startFrom: 'risk' // This can be used to skip to risk questions
+                    }
+                  });
+                }
+              }
+            ]
+          );
+          break;
+
+        case 'Risk':
+          // User completed onboarding - go to main app
+          console.log('✅ User fully onboarded - going to main app');
+          try {
+            // Try to get user profile for welcome message
+            const profileResponse = await fetch(`https://fin-advisor-ashokkumar5.replit.app/profile?phone_number=${cleanPhone}`);
+            
+            if (profileResponse.ok) {
+              const profileData = await profileResponse.json();
+              const userName = profileData.Profile?.name || 'there';
+              
+              Alert.alert(
+                'Welcome Back! 🎉',
+                `Hi ${userName}! Ready to continue your financial journey?`,
+                [
+                  {
+                    text: 'Let\'s Go!',
+                    onPress: () => {
+                      router.replace('/(tabs)');
+                    }
+                  }
+                ]
+              );
+            } else {
+              // Profile fetch failed, but user is onboarded
+              router.replace('/(tabs)');
+            }
+          } catch (profileError) {
+            console.error('⚠️ Error fetching profile, but proceeding to main app:', profileError);
+            router.replace('/(tabs)');
+          }
+          break;
+
+        default:
+          // Unknown status - default to onboarding
+          console.log('❓ Unknown status, defaulting to onboarding');
+          router.push({
+            pathname: '/onboarding',
+            params: { phoneNumber: cleanPhone }
+          });
+          break;
       }
     } catch (error) {
-      console.error('Error checking user:', error);
-      // On error, proceed to onboarding
+      console.error('💥 Error in handleContinue:', error);
+      
+      // On any error, allow user to proceed to onboarding
       const cleanPhone = phoneNumber.replace(/\D/g, '');
-      router.push({
-        pathname: '/onboarding',
-        params: { phoneNumber: cleanPhone }
-      });
+      Alert.alert(
+        'Connection Issue',
+        'We\'re having trouble connecting to our servers. You can still proceed with registration.',
+        [
+          {
+            text: 'Continue Anyway',
+            onPress: () => {
+              router.push({
+                pathname: '/onboarding',
+                params: { phoneNumber: cleanPhone }
+              });
+            }
+          },
+          {
+            text: 'Try Again',
+            onPress: () => setLoading(false)
+          }
+        ]
+      );
     } finally {
       setLoading(false);
     }
@@ -209,7 +302,7 @@ export default function AuthScreen() {
               </View>
               
               <Text style={styles.inputHint}>
-                We'll check if you're already registered or help you create a new account
+                We'll check your registration status and guide you accordingly
               </Text>
             </View>
 
