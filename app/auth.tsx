@@ -141,7 +141,7 @@ export default function AuthScreen() {
           useEffect(() => {
             // Navigate immediately when the component mounts
             console.log('🏠 Navigating to home tab');
-            router.replace('/onboarding');
+            router.replace('/onboardings');
           }, []);
           break;
 
