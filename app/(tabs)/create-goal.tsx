@@ -53,6 +53,7 @@ export default function CreateGoalScreen() {
   const [suggestedGoals, setSuggestedGoals] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
+  const [userPhoneNumber, setUserPhoneNumber] = useState<string>('');
 
   const chatFlow = [
     {
@@ -92,6 +93,7 @@ export default function CreateGoalScreen() {
 
   useEffect(() => {
     fetchGoalSuggestions();
+    loadUserPhoneNumber();
     addBotMessage(chatFlow[0].message);
   }, []);
 
@@ -103,10 +105,17 @@ export default function CreateGoalScreen() {
     }).start();
   }, [messages]);
 
+  const loadUserPhoneNumber = () => {
+    // In a real app, you would get this from AsyncStorage, Redux, or context
+    // For now, we'll use a placeholder. You should implement proper user data persistence
+    const cachedPhoneNumber = '7894561230'; // This should come from your user storage
+    setUserPhoneNumber(cachedPhoneNumber);
+  };
+
   const fetchGoalSuggestions = async () => {
     try {
       setLoading(true);
-      const response = await fetch('https://127.0.0.1:8080/finadvisor/goal_suggesstion');
+      const response = await fetch('https://fin-advisor-ashokkumar5.replit.app/finadvisor/goal_suggesstion');
       const data = await response.json();
       setSuggestedGoals(data.goals || []);
     } catch (error) {
@@ -229,13 +238,19 @@ export default function CreateGoalScreen() {
     try {
       setLoading(true);
       
+      if (!userPhoneNumber) {
+        throw new Error('User phone number not found. Please complete onboarding first.');
+      }
+      
       const payload = {
-        phone_number : 
+        phone_number: userPhoneNumber,
         goal_name: goalData.name,
-        target_amount: goalData.target_amount,
+        target_amount: parseInt(goalData.target_amount),
         target_date: goalData.target_date,
-        current_amount: goalData.amount_saved,
+        current_amount: parseInt(goalData.amount_saved),
       };
+      
+      console.log('🚀 Creating goal with payload:', payload);
       
       const response = await fetch('https://fin-advisor-ashokkumar5.replit.app/user_onboard/create_goal', {
         method: 'POST',
@@ -245,7 +260,12 @@ export default function CreateGoalScreen() {
         body: JSON.stringify(payload),
       });
       
+      console.log('📡 Response status:', response.status);
+      
       if (response.ok) {
+        const responseText = await response.text();
+        console.log('✅ Goal created successfully:', responseText);
+        
         setTimeout(() => {
           addBotMessage("🎉 Your goal has been created successfully! You're one step closer to making it happen. Let's go crush this goal! 💪");
           
@@ -254,10 +274,12 @@ export default function CreateGoalScreen() {
           }, 2000);
         }, 2000);
       } else {
-        throw new Error('Failed to create goal');
+        const errorText = await response.text();
+        console.error('❌ API Error:', response.status, errorText);
+        throw new Error(`Failed to create goal: ${response.status}`);
       }
     } catch (error) {
-      console.error('Error creating goal:', error);
+      console.error('💥 Error creating goal:', error);
       Alert.alert(
         'Oops!', 
         'Something went wrong while creating your goal. Please try again.',
