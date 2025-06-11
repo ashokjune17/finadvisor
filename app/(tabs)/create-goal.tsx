@@ -230,13 +230,14 @@ export default function CreateGoalScreen() {
       setLoading(true);
       
       const payload = {
-        name: goalData.name,
+        phone_number : 
+        goal_name: goalData.name,
         target_amount: goalData.target_amount,
         target_date: goalData.target_date,
-        amount_saved: goalData.amount_saved,
+        current_amount: goalData.amount_saved,
       };
       
-      const response = await fetch('https://127.0.0.1:8080/finadvisor/create_goal', {
+      const response = await fetch('https://fin-advisor-ashokkumar5.replit.app/user_onboard/create_goal', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
