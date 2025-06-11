@@ -216,25 +216,10 @@ export default function CreateGoalScreen() {
       Alert.alert('Invalid Amount', 'Please enter a valid amount');
       return;
     }
-    const amount = textInput.trim();
-    
-    // // If empty, default to 0
-    // if (!amount) {
-    //   const formattedAmount = 'Starting fresh! ₹0';
-    //   addUserMessage(formattedAmount);
-    //   setGoalData(prev => ({ ...prev, amount_saved: '0' }));
-    // } else {
-    //   // Validate if it's a number
-    //   if (isNaN(Number(amount)) || Number(amount) < 0) {
-    //     Alert.alert('Invalid Amount', 'Please enter a valid amount (or leave empty for 0)');
-    //     return;
-    //   }
-      
-      const formattedAmount = `₹${Number(textInput).toLocaleString('en-IN')}`;
-      addUserMessage(formattedAmount);
-      setGoalData(prev => ({ ...prev, amount_saved: textInput }));
-    }
-    
+         
+    const formattedAmount = `₹${Number(textInput).toLocaleString('en-IN')}`;
+    addUserMessage(formattedAmount);
+    setGoalData(prev => ({ ...prev, amount_saved: textInput }));   
     setTextInput('');
     
     setTimeout(() => {
