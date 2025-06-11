@@ -272,6 +272,7 @@ export default function CreateGoalScreen() {
       console.log('🚀 Creating goal with payload:', payload);
       console.log('🚀 Target amount (parsed):', targetAmount);
       console.log('🚀 Current amount (parsed):', currentAmount);
+      console.log('🚀 Current user:', userPhoneNumber);
       
       const response = await fetch('https://fin-advisor-ashokkumar5.replit.app/create_goal', {
         method: 'POST',
