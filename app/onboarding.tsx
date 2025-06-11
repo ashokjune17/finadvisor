@@ -200,7 +200,7 @@ export default function OnboardingScreen() {
         phone_number: userData.mobile,
         name: userData.name,
         dob: userData.dob,
-        marital_status: maritalStatus,
+        marital_status: userData.socialStatus,
         income: parseInt(userData.income),
         pan: userData.pan.toUpperCase(),
       };
