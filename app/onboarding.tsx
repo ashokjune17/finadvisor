@@ -26,6 +26,11 @@ interface ChatMessage {
   options?: string[];
 }
 
+interface RiskQuestion {
+  question: string;
+  answer: string;
+}
+
 interface UserData {
   name: string;
   dob: string;
@@ -35,6 +40,7 @@ interface UserData {
   income: string;
   socialStatus: string;
   pan: string;
+  riskQuestions: RiskQuestion[];
 }
 
 export default function OnboardingScreen() {
@@ -52,6 +58,7 @@ export default function OnboardingScreen() {
     income: '',
     socialStatus: '',
     pan: '',
+    riskQuestions: [],
   });
   const [fadeAnim] = useState(new Animated.Value(0));
 
@@ -194,9 +201,12 @@ export default function OnboardingScreen() {
         phone_number: userData.mobile,
         name: userData.name,
         dob: userData.dob,
-        marital_status: userData.socialStatus, // Send as-is without conversion
+        marital_status: userData.socialStatus,
         income: parseInt(userData.income),
         pan: userData.pan.toUpperCase(),
+        risk_questions: {
+          items: userData.riskQuestions
+        }
       };
 
       console.log('🚀 Submitting payload:', payload);
@@ -286,9 +296,25 @@ export default function OnboardingScreen() {
       // Don't advance immediately for multi-select
       return;
     } else if (currentFlow.id === 'risk') {
-      setUserData(prev => ({ ...prev, riskTolerance: option }));
+      setUserData(prev => ({ 
+        ...prev, 
+        riskTolerance: option,
+        riskQuestions: [...prev.riskQuestions, {
+          question: currentFlow.message,
+          answer: option
+        }]
+      }));
     } else if (currentFlow.id === 'social_status') {
       setUserData(prev => ({ ...prev, socialStatus: option }));
+    } else if (currentFlow.id.startsWith('risk_')) {
+      // Add risk question and answer to the array
+      setUserData(prev => ({
+        ...prev,
+        riskQuestions: [...prev.riskQuestions, {
+          question: currentFlow.message,
+          answer: option
+        }]
+      }));
     }
     
     // Move to next step
