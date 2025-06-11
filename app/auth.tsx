@@ -141,6 +141,12 @@ export default function AuthScreen() {
            router.replace('/(tabs)');
           break;
 
+        case 'Goal':
+          // User completed onboarding - go to main app
+          console.log('✅ User fully onboarded - going to main app');
+           router.replace('/(tabs)');
+          break;
+
         default:
           // Unknown status - default to onboarding
           console.log('❓ Unknown status, defaulting to onboarding');
