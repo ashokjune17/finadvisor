@@ -15,6 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Shadows } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { User, Settings, Bell, Lock, CircleHelp as HelpCircle, LogOut, ChevronRight, Shield, Smartphone, Eye, Target, Award, TrendingUp, BookOpen, GraduationCap, RefreshCw } from 'lucide-react-native';
+import { useAuth } from '@/hooks/useAuth';
 
 interface UserProfile {
   phone_number: string;
@@ -48,16 +49,14 @@ interface SettingItem {
 }
 
 export default function ProfileScreen() {
+  const { phoneNumber, isLoading: authLoading, clearPhoneNumber } = useAuth();
   const [notifications, setNotifications] = useState(true);
   const [biometrics, setBiometrics] = useState(false);
-  const [dataPrivacy, setDataPrivacy] = useState(true);
+  const [dataPrivacy,setDataPrivacy] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Hardcoded phone number for demo - in production, get from user context/storage
-  const phoneNumber = '7406189782';
 
   const getRiskText = (riskLevel: string): string => {
     const riskMap: { [key: string]: string } = {
@@ -71,6 +70,12 @@ export default function ProfileScreen() {
   };
 
   const fetchUserProfile = async () => {
+    if (!phoneNumber) {
+      setError('Phone number not available');
+      setLoading(false);
+      return;
+    }
+
     try {
       setError(null);
       const response = await fetch(`https://fin-advisor-ashokkumar5.replit.app/profile?phone_number=${phoneNumber}`);
@@ -96,8 +101,13 @@ export default function ProfileScreen() {
   };
 
   useEffect(() => {
-    fetchUserProfile();
-  }, []);
+    if (!authLoading && phoneNumber) {
+      fetchUserProfile();
+    } else if (!authLoading && !phoneNumber) {
+      setError('Please log in to view your profile');
+      setLoading(false);
+    }
+  }, [phoneNumber, authLoading]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -194,8 +204,8 @@ export default function ProfileScreen() {
         { 
           text: 'Logout', 
           style: 'destructive',
-          onPress: () => {
-            // Handle logout logic here
+          onPress: async () => {
+            await clearPhoneNumber();
             Alert.alert('Logged out', 'You have been logged out successfully');
           }
         },
@@ -207,7 +217,7 @@ export default function ProfileScreen() {
     return `₹${amount.toLocaleString('en-IN')}`;
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>

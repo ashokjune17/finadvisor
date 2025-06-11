@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router';
 import { Colors, Shadows } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { Smartphone, ChevronRight, Sparkles, Shield, TrendingUp, Target } from 'lucide-react-native';
+import { useAuth } from '@/hooks/useAuth';
 
 interface OnboardingResponse {
   result: string;
@@ -22,6 +23,7 @@ interface OnboardingResponse {
 
 export default function AuthScreen() {
   const router = useRouter();
+  const { savePhoneNumber } = useAuth();
   const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
@@ -92,6 +94,9 @@ export default function AuthScreen() {
       // Clean the phone number
       const cleanPhone = phoneNumber.replace(/\D/g, '');
       console.log('📱 Checking onboarding status for:', cleanPhone);
+      
+      // Save phone number to storage
+      await savePhoneNumber(cleanPhone);
       
       // Check onboarding status
       const onboardingStatus = await checkOnboardingStatus(cleanPhone);

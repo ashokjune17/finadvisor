@@ -17,6 +17,7 @@ import { useRouter } from 'expo-router';
 import { Colors, Shadows } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { Plus, Target, ChevronRight, Calendar, DollarSign, X, Smile, MessageCircle, CreditCard as Edit, RefreshCw, TrendingUp } from 'lucide-react-native';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Goal {
   goal_id: number;
@@ -46,6 +47,7 @@ const goalCategories = [
 
 export default function GoalsScreen() {
   const router = useRouter();
+  const { phoneNumber, isLoading: authLoading } = useAuth();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -58,10 +60,13 @@ export default function GoalsScreen() {
     selectedCategory: goalCategories[0],
   });
 
-  // Hardcoded phone number for demo - in production, get from user context/storage
-  const phoneNumber = '7406189782';
-
   const fetchGoals = async () => {
+    if (!phoneNumber) {
+      setError('Phone number not available');
+      setLoading(false);
+      return;
+    }
+
     try {
       setError(null);
       const response = await fetch(`https://fin-advisor-ashokkumar5.replit.app/goals?phone_number=${phoneNumber}`);
@@ -87,8 +92,13 @@ export default function GoalsScreen() {
   };
 
   useEffect(() => {
-    fetchGoals();
-  }, []);
+    if (!authLoading && phoneNumber) {
+      fetchGoals();
+    } else if (!authLoading && !phoneNumber) {
+      setError('Please log in to view your goals');
+      setLoading(false);
+    }
+  }, [phoneNumber, authLoading]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -161,7 +171,7 @@ export default function GoalsScreen() {
     router.push('/create-goal');
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>

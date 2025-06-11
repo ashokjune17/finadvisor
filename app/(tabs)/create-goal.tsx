@@ -24,6 +24,7 @@ import {
   ArrowLeft,
   Sparkles
 } from 'lucide-react-native';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ChatMessage {
   id: string;
@@ -41,6 +42,7 @@ interface GoalData {
 
 export default function CreateGoalScreen() {
   const router = useRouter();
+  const { phoneNumber } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [textInput, setTextInput] = useState('');
@@ -53,7 +55,6 @@ export default function CreateGoalScreen() {
   const [suggestedGoals, setSuggestedGoals] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
-  const [userPhoneNumber, setUserPhoneNumber] = useState<string>('');
 
   const chatFlow = [
     {
@@ -119,17 +120,9 @@ export default function CreateGoalScreen() {
     
     // Load initial data
     fetchGoalSuggestions();
-    loadUserPhoneNumber();
     
     // Add welcome message
     addBotMessage(chatFlow[0].message);
-  };
-
-  const loadUserPhoneNumber = () => {
-    // In a real app, you would get this from AsyncStorage, Redux, or context
-    // For now, we'll use a placeholder. You should implement proper user data persistence
-    const cachedPhoneNumber = '7406189782'; // This should come from your user storage
-    setUserPhoneNumber(cachedPhoneNumber);
   };
 
   const fetchGoalSuggestions = async () => {
@@ -253,8 +246,8 @@ export default function CreateGoalScreen() {
     try {
       setLoading(true);
       
-      if (!userPhoneNumber) {
-        throw new Error('User phone number not found. Please complete onboarding first.');
+      if (!phoneNumber) {
+        throw new Error('User phone number not found. Please complete authentication first.');
       }
       
       // Ensure all numeric values are properly converted
@@ -271,7 +264,7 @@ export default function CreateGoalScreen() {
       }
       
       const payload = {
-        phone_number: userPhoneNumber,
+        phone_number: phoneNumber,
         goal_name: goalData.name,
         target_amount: targetAmount,
         target_date: goalData.target_date,
@@ -281,7 +274,7 @@ export default function CreateGoalScreen() {
       console.log('🚀 Creating goal with payload:', payload);
       console.log('🚀 Target amount (parsed):', targetAmount);
       console.log('🚀 Current amount (parsed):', currentAmount);
-      console.log('🚀 Current user:', userPhoneNumber);
+      console.log('🚀 Current user:', phoneNumber);
       
       const response = await fetch('https://fin-advisor-ashokkumar5.replit.app/create_goal', {
         method: 'POST',

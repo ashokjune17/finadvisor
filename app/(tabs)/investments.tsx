@@ -16,6 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Shadows } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { Plus, TrendingUp, TrendingDown, Eye, EyeOff, Filter, X, DollarSign, Calendar, Percent, RefreshCw, ChartBar as BarChart3, ChartPie as PieChart } from 'lucide-react-native';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Investment {
   fund_name: string;
@@ -37,6 +38,7 @@ const investmentTypes = [
 ];
 
 export default function InvestmentsScreen() {
+  const { phoneNumber, isLoading: authLoading } = useAuth();
   const [investments, setInvestments] = useState<Investment[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -52,10 +54,13 @@ export default function InvestmentsScreen() {
     startDate: '',
   });
 
-  // Hardcoded phone number for demo - in production, get from user context/storage
-  const phoneNumber = '7894561230';
-
   const fetchInvestments = async () => {
+    if (!phoneNumber) {
+      setError('Phone number not available');
+      setLoading(false);
+      return;
+    }
+
     try {
       setError(null);
       const response = await fetch(`https://fin-advisor-ashokkumar5.replit.app/investments?phone_number=${phoneNumber}`);
@@ -81,8 +86,13 @@ export default function InvestmentsScreen() {
   };
 
   useEffect(() => {
-    fetchInvestments();
-  }, []);
+    if (!authLoading && phoneNumber) {
+      fetchInvestments();
+    } else if (!authLoading && !phoneNumber) {
+      setError('Please log in to view your investments');
+      setLoading(false);
+    }
+  }, [phoneNumber, authLoading]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -168,7 +178,7 @@ export default function InvestmentsScreen() {
     fetchInvestments();
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>

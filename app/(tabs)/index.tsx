@@ -19,6 +19,7 @@ import {
   Target,
   TrendingUp,
 } from 'lucide-react-native';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Goal {
   goal_name: string;
@@ -33,16 +34,20 @@ interface ApiResponse {
 }
 
 export default function HomeScreen() {
+  const { phoneNumber, isLoading: authLoading } = useAuth();
   const [portfolioValue, setPortfolioValue] = useState<number>(0);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Hardcoded phone number for demo - in production, get from user context/storage
-  const phoneNumber = '7894561230';
-
   const fetchHomeData = async () => {
+    if (!phoneNumber) {
+      setError('Phone number not available');
+      setLoading(false);
+      return;
+    }
+
     try {
       setError(null);
       const response = await fetch(`https://fin-advisor-ashokkumar5.replit.app/home?phone_number=${phoneNumber}`);
@@ -69,8 +74,13 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
-    fetchHomeData();
-  }, []);
+    if (!authLoading && phoneNumber) {
+      fetchHomeData();
+    } else if (!authLoading && !phoneNumber) {
+      setError('Please log in to view your data');
+      setLoading(false);
+    }
+  }, [phoneNumber, authLoading]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -114,7 +124,7 @@ export default function HomeScreen() {
     return 'Good evening! 🌙';
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
