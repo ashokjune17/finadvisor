@@ -78,6 +78,7 @@ export default function GoalsScreen() {
       const data: ApiResponse = await response.json();
       
       if (data.result === 'Success' && data.Goals) {
+        console.log(data)
         setGoals(data.Goals);
       } else {
         throw new Error('Invalid response format');
