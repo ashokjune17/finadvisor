@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   Modal,
   TextInput,
   Alert,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -23,19 +25,21 @@ import {
   X,
   DollarSign,
   Calendar,
-  Percent
+  Percent,
+  RefreshCw,
+  BarChart3,
+  PieChart
 } from 'lucide-react-native';
 
 interface Investment {
-  id: string;
-  name: string;
-  type: 'SIP' | 'Lumpsum' | 'FD' | 'Crypto' | 'Stocks';
-  amount: number;
-  currentValue: number;
-  returns: number;
-  returnPercentage: number;
-  startDate: string;
-  category: string;
+  fund_name: string;
+  fund_nav: string;
+  invested_amount: string;
+}
+
+interface ApiResponse {
+  result: string;
+  Investments: Investment[];
 }
 
 const investmentTypes = [
@@ -47,68 +51,80 @@ const investmentTypes = [
 ];
 
 export default function InvestmentsScreen() {
-  const [investments, setInvestments] = useState<Investment[]>([
-    {
-      id: '1',
-      name: 'HDFC Index Fund',
-      type: 'SIP',
-      amount: 50000,
-      currentValue: 55500,
-      returns: 5500,
-      returnPercentage: 11.0,
-      startDate: 'Jan 2024',
-      category: 'Mutual Fund',
-    },
-    {
-      id: '2',
-      name: 'Axis Bank FD',
-      type: 'FD',
-      amount: 100000,
-      currentValue: 106500,
-      returns: 6500,
-      returnPercentage: 6.5,
-      startDate: 'Mar 2024',
-      category: 'Fixed Deposit',
-    },
-    {
-      id: '3',
-      name: 'Bitcoin',
-      type: 'Crypto',
-      amount: 25000,
-      currentValue: 32000,
-      returns: 7000,
-      returnPercentage: 28.0,
-      startDate: 'Feb 2024',
-      category: 'Cryptocurrency',
-    },
-  ]);
-
+  const [investments, setInvestments] = useState<Investment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [showValues, setShowValues] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState('All');
   const [newInvestment, setNewInvestment] = useState({
     name: '',
-    type: 'SIP' as Investment['type'],
+    type: 'SIP' as 'SIP' | 'Lumpsum' | 'FD' | 'Crypto' | 'Stocks',
     amount: '',
     category: '',
     startDate: '',
   });
 
-  const formatCurrency = (amount: number) => {
+  // Hardcoded phone number for demo - in production, get from user context/storage
+  const phoneNumber = '7894561230';
+
+  const fetchInvestments = async () => {
+    try {
+      setError(null);
+      const response = await fetch(`https://fin-advisor-ashokkumar5.replit.app/investments?phone_number=${phoneNumber}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch investments: ${response.status}`);
+      }
+      
+      const data: ApiResponse = await response.json();
+      
+      if (data.result === 'Success' && data.Investments) {
+        setInvestments(data.Investments);
+      } else {
+        throw new Error('Invalid response format');
+      }
+    } catch (error) {
+      console.error('Error fetching investments:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load investments');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchInvestments();
+  }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchInvestments();
+  };
+
+  const formatCurrency = (amount: number | string) => {
     if (!showValues) return '••••••';
-    return `₹${amount.toLocaleString('en-IN')}`;
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return `₹${numAmount.toLocaleString('en-IN')}`;
   };
 
   const getTotalInvested = () => {
-    return investments.reduce((sum, inv) => sum + inv.amount, 0);
+    return investments.reduce((sum, inv) => sum + parseFloat(inv.invested_amount), 0);
   };
 
   const getTotalCurrentValue = () => {
-    return investments.reduce((sum, inv) => sum + inv.currentValue, 0);
+    return investments.reduce((sum, inv) => {
+      const invested = parseFloat(inv.invested_amount);
+      const nav = parseFloat(inv.fund_nav);
+      // Assuming NAV represents current value per unit, and we have 1 unit per rupee invested
+      // This is a simplified calculation - in reality, you'd need units and current NAV
+      return sum + (invested * (nav / 10)); // Simplified calculation
+    }, 0);
   };
 
   const getTotalReturns = () => {
-    return investments.reduce((sum, inv) => sum + inv.returns, 0);
+    return getTotalCurrentValue() - getTotalInvested();
   };
 
   const getOverallReturnPercentage = () => {
@@ -117,9 +133,33 @@ export default function InvestmentsScreen() {
     return totalInvested > 0 ? (totalReturns / totalInvested) * 100 : 0;
   };
 
+  const getInvestmentReturn = (investment: Investment) => {
+    const invested = parseFloat(investment.invested_amount);
+    const nav = parseFloat(investment.fund_nav);
+    // Simplified calculation for demo
+    const currentValue = invested * (nav / 10);
+    const returns = currentValue - invested;
+    const returnPercentage = invested > 0 ? (returns / invested) * 100 : 0;
+    
+    return {
+      currentValue,
+      returns,
+      returnPercentage
+    };
+  };
+
+  const getFundType = (fundName: string): string => {
+    const name = fundName.toLowerCase();
+    if (name.includes('sip') || name.includes('systematic')) return 'SIP';
+    if (name.includes('fd') || name.includes('fixed') || name.includes('deposit')) return 'FD';
+    if (name.includes('equity') || name.includes('stock')) return 'Stocks';
+    if (name.includes('crypto') || name.includes('bitcoin') || name.includes('ethereum')) return 'Crypto';
+    return 'Mutual Fund';
+  };
+
   const filteredInvestments = selectedFilter === 'All' 
     ? investments 
-    : investments.filter(inv => inv.type === selectedFilter);
+    : investments.filter(inv => getFundType(inv.fund_name) === selectedFilter);
 
   const handleAddInvestment = () => {
     if (!newInvestment.name.trim() || !newInvestment.amount || !newInvestment.category) {
@@ -127,19 +167,8 @@ export default function InvestmentsScreen() {
       return;
     }
 
-    const investment: Investment = {
-      id: Date.now().toString(),
-      name: newInvestment.name,
-      type: newInvestment.type,
-      amount: parseInt(newInvestment.amount),
-      currentValue: parseInt(newInvestment.amount), // Start with invested amount
-      returns: 0,
-      returnPercentage: 0,
-      startDate: newInvestment.startDate || 'Now',
-      category: newInvestment.category,
-    };
-
-    setInvestments(prev => [...prev, investment]);
+    // In a real app, you would make an API call to create the investment
+    // For now, we'll just refresh the investments list
     setShowAddModal(false);
     setNewInvestment({
       name: '',
@@ -148,11 +177,46 @@ export default function InvestmentsScreen() {
       category: '',
       startDate: '',
     });
+    
+    // Refresh investments after adding
+    fetchInvestments();
   };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.loadingText}>Loading your investments...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <TrendingUp size={48} color={Colors.textMuted} />
+          <Text style={styles.errorTitle}>Oops! Something went wrong</Text>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={fetchInvestments}>
+            <RefreshCw size={20} color={Colors.surface} />
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         {/* Header */}
         <View style={styles.header}>
           <View>
@@ -177,55 +241,67 @@ export default function InvestmentsScreen() {
         </View>
 
         {/* Portfolio Overview */}
-        <LinearGradient
-          colors={[Colors.gradientStart, Colors.gradientEnd]}
-          style={styles.portfolioCard}
-        >
-          <Text style={styles.portfolioTitle}>Portfolio Value</Text>
-          <Text style={styles.portfolioValue}>
-            {formatCurrency(getTotalCurrentValue())}
-          </Text>
-          
-          <View style={styles.portfolioStats}>
-            <View style={styles.portfolioStat}>
-              <Text style={styles.statLabel}>Invested</Text>
-              <Text style={styles.statValue}>
-                {formatCurrency(getTotalInvested())}
-              </Text>
+        {investments.length > 0 && (
+          <LinearGradient
+            colors={[Colors.gradientStart, Colors.gradientEnd]}
+            style={styles.portfolioCard}
+          >
+            <Text style={styles.portfolioTitle}>Portfolio Value</Text>
+            <Text style={styles.portfolioValue}>
+              {formatCurrency(getTotalCurrentValue())}
+            </Text>
+            
+            <View style={styles.portfolioStats}>
+              <View style={styles.portfolioStat}>
+                <Text style={styles.statLabel}>Invested</Text>
+                <Text style={styles.statValue}>
+                  {formatCurrency(getTotalInvested())}
+                </Text>
+              </View>
+              <View style={styles.portfolioStat}>
+                <Text style={styles.statLabel}>Returns</Text>
+                <Text style={[
+                  styles.statValue,
+                  { color: getTotalReturns() >= 0 ? Colors.surface : '#FFB3B3' }
+                ]}>
+                  {showValues ? (getTotalReturns() >= 0 ? '+' : '') + formatCurrency(Math.abs(getTotalReturns())) : '••••'}
+                </Text>
+              </View>
+              <View style={styles.portfolioStat}>
+                <Text style={styles.statLabel}>Return %</Text>
+                <Text style={[
+                  styles.statValue,
+                  { color: getOverallReturnPercentage() >= 0 ? Colors.surface : '#FFB3B3' }
+                ]}>
+                  {showValues ? `${getOverallReturnPercentage() >= 0 ? '+' : ''}${getOverallReturnPercentage().toFixed(1)}%` : '••••'}
+                </Text>
+              </View>
             </View>
-            <View style={styles.portfolioStat}>
-              <Text style={styles.statLabel}>Returns</Text>
-              <Text style={styles.statValue}>
-                {formatCurrency(getTotalReturns())}
-              </Text>
-            </View>
-            <View style={styles.portfolioStat}>
-              <Text style={styles.statLabel}>Return %</Text>
-              <Text style={styles.statValue}>
-                {showValues ? `${getOverallReturnPercentage().toFixed(1)}%` : '••••'}
-              </Text>
-            </View>
-          </View>
-        </LinearGradient>
+          </LinearGradient>
+        )}
 
         {/* Quick Stats */}
-        <View style={styles.quickStats}>
-          <View style={styles.quickStat}>
-            <View style={[styles.quickStatIcon, { backgroundColor: Colors.primary }]}>
-              <TrendingUp size={20} color={Colors.surface} />
+        {investments.length > 0 && (
+          <View style={styles.quickStats}>
+            <View style={styles.quickStat}>
+              <View style={[styles.quickStatIcon, { backgroundColor: Colors.primary }]}>
+                <BarChart3 size={20} color={Colors.surface} />
+              </View>
+              <Text style={styles.quickStatLabel}>Total Funds</Text>
+              <Text style={styles.quickStatValue}>{investments.length}</Text>
             </View>
-            <Text style={styles.quickStatLabel}>Best Performer</Text>
-            <Text style={styles.quickStatValue}>Bitcoin (+28%)</Text>
-          </View>
-          
-          <View style={styles.quickStat}>
-            <View style={[styles.quickStatIcon, { backgroundColor: Colors.accent }]}>
-              <DollarSign size={20} color={Colors.surface} />
+            
+            <View style={styles.quickStat}>
+              <View style={[styles.quickStatIcon, { backgroundColor: Colors.accent }]}>
+                <PieChart size={20} color={Colors.surface} />
+              </View>
+              <Text style={styles.quickStatLabel}>Avg NAV</Text>
+              <Text style={styles.quickStatValue}>
+                ₹{(investments.reduce((sum, inv) => sum + parseFloat(inv.fund_nav), 0) / investments.length).toFixed(2)}
+              </Text>
             </View>
-            <Text style={styles.quickStatLabel}>Monthly SIP</Text>
-            <Text style={styles.quickStatValue}>₹12,000</Text>
           </View>
-        </View>
+        )}
 
         {/* Filter Tabs */}
         <View style={styles.filterContainer}>
@@ -246,7 +322,9 @@ export default function InvestmentsScreen() {
             </TouchableOpacity>
             
             {investmentTypes.map((type) => {
-              const count = investments.filter(inv => inv.type === type.id).length;
+              const count = investments.filter(inv => getFundType(inv.fund_name) === type.id).length;
+              if (count === 0) return null;
+              
               return (
                 <TouchableOpacity
                   key={type.id}
@@ -283,58 +361,74 @@ export default function InvestmentsScreen() {
             </TouchableOpacity>
           </View>
 
-          {filteredInvestments.map((investment) => (
-            <TouchableOpacity key={investment.id} style={styles.investmentCard}>
-              <View style={styles.investmentHeader}>
-                <View style={styles.investmentInfo}>
-                  <View style={[
-                    styles.typeTag,
-                    { backgroundColor: investmentTypes.find(t => t.id === investment.type)?.color || Colors.primary }
-                  ]}>
-                    <Text style={styles.typeText}>{investment.type}</Text>
+          {filteredInvestments.map((investment, index) => {
+            const fundType = getFundType(investment.fund_name);
+            const typeColor = investmentTypes.find(t => t.id === fundType)?.color || Colors.primary;
+            const returnData = getInvestmentReturn(investment);
+            
+            return (
+              <TouchableOpacity key={`${investment.fund_name}-${index}`} style={styles.investmentCard}>
+                <View style={styles.investmentHeader}>
+                  <View style={styles.investmentInfo}>
+                    <View style={[
+                      styles.typeTag,
+                      { backgroundColor: typeColor }
+                    ]}>
+                      <Text style={styles.typeText}>{fundType}</Text>
+                    </View>
+                    <Text style={styles.investmentName}>{investment.fund_name}</Text>
+                    <Text style={styles.investmentCategory}>NAV: ₹{investment.fund_nav}</Text>
                   </View>
-                  <Text style={styles.investmentName}>{investment.name}</Text>
-                  <Text style={styles.investmentCategory}>{investment.category}</Text>
+                  
+                  <View style={styles.investmentValues}>
+                    <Text style={styles.currentValue}>
+                      {formatCurrency(returnData.currentValue)}
+                    </Text>
+                    <View style={styles.returnContainer}>
+                      {returnData.returns >= 0 ? (
+                        <TrendingUp size={14} color={Colors.success} />
+                      ) : (
+                        <TrendingDown size={14} color={Colors.error} />
+                      )}
+                      <Text style={[
+                        styles.returnText,
+                        { color: returnData.returns >= 0 ? Colors.success : Colors.error }
+                      ]}>
+                        {showValues ? `${returnData.returns >= 0 ? '+' : ''}${formatCurrency(Math.abs(returnData.returns))}` : '••••'}
+                      </Text>
+                      <Text style={[
+                        styles.returnPercentage,
+                        { color: returnData.returns >= 0 ? Colors.success : Colors.error }
+                      ]}>
+                        ({showValues ? `${returnData.returnPercentage >= 0 ? '+' : ''}${returnData.returnPercentage.toFixed(1)}%` : '••••'})
+                      </Text>
+                    </View>
+                  </View>
                 </View>
                 
-                <View style={styles.investmentValues}>
-                  <Text style={styles.currentValue}>
-                    {formatCurrency(investment.currentValue)}
+                <View style={styles.investmentFooter}>
+                  <Text style={styles.investedAmount}>
+                    Invested: {formatCurrency(investment.invested_amount)}
                   </Text>
-                  <View style={styles.returnContainer}>
-                    {investment.returns >= 0 ? (
-                      <TrendingUp size={14} color={Colors.success} />
-                    ) : (
-                      <TrendingDown size={14} color={Colors.error} />
-                    )}
-                    <Text style={[
-                      styles.returnText,
-                      { color: investment.returns >= 0 ? Colors.success : Colors.error }
-                    ]}>
-                      {showValues ? `+${formatCurrency(Math.abs(investment.returns))}` : '••••'}
-                    </Text>
-                    <Text style={[
-                      styles.returnPercentage,
-                      { color: investment.returns >= 0 ? Colors.success : Colors.error }
-                    ]}>
-                      ({showValues ? `${investment.returnPercentage.toFixed(1)}%` : '••••'})
-                    </Text>
-                  </View>
+                  <Text style={styles.startDate}>
+                    Active Investment
+                  </Text>
                 </View>
-              </View>
-              
-              <View style={styles.investmentFooter}>
-                <Text style={styles.investedAmount}>
-                  Invested: {formatCurrency(investment.amount)}
-                </Text>
-                <Text style={styles.startDate}>
-                  Since {investment.startDate}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))}
+              </TouchableOpacity>
+            );
+          })}
 
-          {filteredInvestments.length === 0 && (
+          {filteredInvestments.length === 0 && investments.length > 0 && (
+            <View style={styles.emptyFilterState}>
+              <Filter size={48} color={Colors.textMuted} />
+              <Text style={styles.emptyTitle}>No {selectedFilter} investments</Text>
+              <Text style={styles.emptySubtitle}>
+                Try selecting a different filter or add a new investment
+              </Text>
+            </View>
+          )}
+
+          {investments.length === 0 && (
             <View style={styles.emptyState}>
               <TrendingUp size={48} color={Colors.textMuted} />
               <Text style={styles.emptyTitle}>No investments yet!</Text>
@@ -352,12 +446,14 @@ export default function InvestmentsScreen() {
         </View>
 
         {/* Investment Tip */}
-        <View style={styles.tipCard}>
-          <Text style={styles.tipTitle}>💡 Investment Tip</Text>
-          <Text style={styles.tipContent}>
-            Diversify your portfolio across different asset classes to reduce risk and maximize returns!
-          </Text>
-        </View>
+        {investments.length > 0 && (
+          <View style={styles.tipCard}>
+            <Text style={styles.tipTitle}>💡 Investment Tip</Text>
+            <Text style={styles.tipContent}>
+              Diversify your portfolio across different asset classes to reduce risk and maximize returns!
+            </Text>
+          </View>
+        )}
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
@@ -394,7 +490,7 @@ export default function InvestmentsScreen() {
                     styles.typeChip,
                     newInvestment.type === type.id && { backgroundColor: type.color },
                   ]}
-                  onPress={() => setNewInvestment(prev => ({ ...prev, type: type.id as Investment['type'] }))}
+                  onPress={() => setNewInvestment(prev => ({ ...prev, type: type.id as any }))}
                 >
                   <Text style={[
                     styles.typeChipText,
@@ -461,6 +557,46 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  loadingText: {
+    ...Typography.body,
+    color: Colors.textMuted,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    gap: 16,
+  },
+  errorTitle: {
+    ...Typography.h2,
+    color: Colors.textDark,
+    textAlign: 'center',
+  },
+  errorText: {
+    ...Typography.body,
+    color: Colors.textMuted,
+    textAlign: 'center',
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 20,
+    gap: 8,
+  },
+  retryButtonText: {
+    ...Typography.bodySemiBold,
+    color: Colors.surface,
   },
   header: {
     flexDirection: 'row',
@@ -682,6 +818,10 @@ const styles = StyleSheet.create({
   emptyState: {
     alignItems: 'center',
     paddingVertical: 48,
+  },
+  emptyFilterState: {
+    alignItems: 'center',
+    paddingVertical: 32,
   },
   emptyTitle: {
     ...Typography.h3,
