@@ -136,7 +136,7 @@ export default function AuthScreen() {
           console.log('✅ User fully onboarded - going to main app');
           try {
             // Try to get user profile for welcome message
-            const profileResponse = await fetch(`https://fin-advisor-ashokkumar5.replit.app/profile?phone_number=${cleanPhone}`);
+            const profileResponse = await fetch(`https://fin-advisor-ashokkumar5.replit.app/home?phone_number=${cleanPhone}`);
             
             if (profileResponse.ok) {
               const profileData = await profileResponse.json();
