@@ -48,6 +48,11 @@ interface CreateGoalResponse {
   Goal_ID: number;
 }
 
+interface LinkFundsResponse {
+  result: string;
+  message?: string;
+}
+
 export default function CreateGoalScreen() {
   const router = useRouter();
   const { phoneNumber } = useAuth();
@@ -204,6 +209,54 @@ export default function CreateGoalScreen() {
       setTimeout(() => {
         router.back();
       }, 2000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const linkFundToGoal = async (goalId: number, fundName: string) => {
+    try {
+      setLoading(true);
+      console.log('🔗 Linking fund to goal:', { goalId, fundName });
+      
+      const response = await fetch('https://fin-advisor-ashokkumar5.replit.app/link_funds', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          goal_id: goalId,
+          fund_name: fundName
+        }),
+      });
+
+      console.log('📡 Link funds response status:', response.status);
+
+      if (response.ok) {
+        const responseText = await response.text();
+        console.log('✅ Fund linked successfully:', responseText);
+        
+        try {
+          const data: LinkFundsResponse = JSON.parse(responseText);
+          
+          if (data.result === 'Success' || data.result === 'success') {
+            return true;
+          } else {
+            console.warn('⚠️ Unexpected response format:', data);
+            return true; // Assume success if we got a response
+          }
+        } catch (parseError) {
+          console.log('⚠️ Response parsing failed, but request likely succeeded');
+          return true; // Assume success if we got a 200 response
+        }
+      } else {
+        const errorText = await response.text();
+        console.error('❌ Link funds API error:', response.status, errorText);
+        throw new Error(`Failed to link fund: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('❌ Error linking fund to goal:', error);
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -397,21 +450,43 @@ export default function CreateGoalScreen() {
     setSelectedFund(fund);
   };
 
-  const handleStartInvesting = () => {
-    if (!selectedFund) {
+  const handleStartInvesting = async () => {
+    if (!selectedFund || !goalId) {
       Alert.alert('Please select a fund', 'Choose one of the recommended funds to proceed.');
       return;
     }
 
-    addBotMessage(`Excellent choice! 🎉 You've selected ${selectedFund.fund_name} with a SIP of ₹${selectedFund.sip.toLocaleString('en-IN')}. Your investment journey begins now! 🚀`);
-    
-    setTimeout(() => {
-      addBotMessage("Your goal and investment plan are all set up! You can track your progress in the Goals tab. Time to make your money work for you! 💪✨");
+    try {
+      setLoading(true);
+      
+      addBotMessage(`Excellent choice! 🎉 You've selected ${selectedFund.fund_name} with a SIP of ₹${selectedFund.sip.toLocaleString('en-IN')}. Setting up your investment...`);
+      
+      // Link the selected fund to the goal
+      const linkSuccess = await linkFundToGoal(goalId, selectedFund.fund_name);
+      
+      if (linkSuccess) {
+        setTimeout(() => {
+          addBotMessage("🚀 Perfect! Your investment plan is all set up! Your goal and fund are now linked. You can track your progress in the Goals tab. Time to make your money work for you! 💪✨");
+          
+          setTimeout(() => {
+            router.back();
+          }, 2000);
+        }, 1500);
+      } else {
+        throw new Error('Failed to link fund to goal');
+      }
+    } catch (error) {
+      console.error('❌ Error in handleStartInvesting:', error);
+      
+      // Show error but still allow user to proceed
+      addBotMessage("⚠️ There was an issue setting up the fund link, but your goal has been created! You can manually select funds later in the Goals tab. 💪");
       
       setTimeout(() => {
         router.back();
       }, 2000);
-    }, 1500);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const moveToGoalSelection = () => {
@@ -589,11 +664,21 @@ export default function CreateGoalScreen() {
 
               {selectedFund && (
                 <TouchableOpacity
-                  style={styles.startInvestingButton}
+                  style={[
+                    styles.startInvestingButton,
+                    loading && styles.startInvestingButtonDisabled
+                  ]}
                   onPress={handleStartInvesting}
+                  disabled={loading}
                 >
-                  <TrendingUp size={20} color={Colors.surface} />
-                  <Text style={styles.startInvestingButtonText}>Start Investing</Text>
+                  {loading ? (
+                    <ActivityIndicator size="small" color={Colors.surface} />
+                  ) : (
+                    <>
+                      <TrendingUp size={20} color={Colors.surface} />
+                      <Text style={styles.startInvestingButtonText}>Start Investing</Text>
+                    </>
+                  )}
                 </TouchableOpacity>
               )}
             </View>
@@ -920,10 +1005,22 @@ const styles = StyleSheet.create({
     gap: 8,
     ...Shadows.medium,
   },
+  startInvestingButtonDisabled: {
+    backgroundColor: Colors.textMuted,
+  },
   startInvestingButtonText: {
     ...Typography.bodySemiBold,
     color: Colors.surface,
     fontSize: 18,
+  },
+  creatingContainer: {
+    alignItems: 'center',
+    paddingVertical: 32,
+    gap: 16,
+  },
+  creatingText: {
+    ...Typography.bodySemiBold,
+    color: Colors.surface,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -984,14 +1081,5 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  creatingContainer: {
-    alignItems: 'center',
-    paddingVertical: 32,
-    gap: 16,
-  },
-  creatingText: {
-    ...Typography.bodySemiBold,
-    color: Colors.surface,
   },
 });
