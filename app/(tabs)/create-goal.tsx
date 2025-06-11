@@ -82,7 +82,7 @@ export default function CreateGoalScreen() {
       id: 'amount_saved',
       message: "Great! 💰 Do you already have some money saved for this goal?",
       type: 'savings_input',
-      placeholder: 'Enter amount already saved in ₹...',
+      placeholder: 'Enter amount already saved in ₹... (or leave empty for 0)',
     },
     {
       id: 'creating',
@@ -212,19 +212,25 @@ export default function CreateGoalScreen() {
   };
 
   const handleSavingsInput = () => {
-    const amount = textInput.trim() || '0';
+    const amount = textInput.trim();
     
-    if (isNaN(Number(amount)) || Number(amount) < 0) {
-      Alert.alert('Invalid Amount', 'Please enter a valid amount (or 0 if none)');
-      return;
+    // If empty, default to 0
+    if (!amount) {
+      const formattedAmount = 'Starting fresh! ₹0';
+      addUserMessage(formattedAmount);
+      setGoalData(prev => ({ ...prev, amount_saved: '0' }));
+    } else {
+      // Validate if it's a number
+      if (isNaN(Number(amount)) || Number(amount) < 0) {
+        Alert.alert('Invalid Amount', 'Please enter a valid amount (or leave empty for 0)');
+        return;
+      }
+      
+      const formattedAmount = `₹${Number(amount).toLocaleString('en-IN')}`;
+      addUserMessage(formattedAmount);
+      setGoalData(prev => ({ ...prev, amount_saved: amount }));
     }
     
-    const formattedAmount = Number(amount) > 0 
-      ? `₹${Number(amount).toLocaleString('en-IN')}` 
-      : 'Starting fresh! ₹0';
-    
-    addUserMessage(formattedAmount);
-    setGoalData(prev => ({ ...prev, amount_saved: amount }));
     setTextInput('');
     
     setTimeout(() => {
@@ -242,15 +248,30 @@ export default function CreateGoalScreen() {
         throw new Error('User phone number not found. Please complete onboarding first.');
       }
       
+      // Ensure all numeric values are properly converted
+      const targetAmount = parseInt(goalData.target_amount);
+      const currentAmount = goalData.amount_saved ? parseInt(goalData.amount_saved) : 0;
+      
+      // Validate numeric conversions
+      if (isNaN(targetAmount) || targetAmount <= 0) {
+        throw new Error('Invalid target amount');
+      }
+      
+      if (isNaN(currentAmount) || currentAmount < 0) {
+        throw new Error('Invalid current amount');
+      }
+      
       const payload = {
-        phone_number: '7894561230',
+        phone_number: userPhoneNumber,
         goal_name: goalData.name,
-        target_amount: parseInt(goalData.target_amount),
+        target_amount: targetAmount,
         target_date: goalData.target_date,
-        current_amount: parseInt(goalData.amount_saved),
+        current_amount: currentAmount,
       };
-      console.log('🚀 Creating goal with target_amount:', parseInt(goalData.target_amount));
-      console.log('🚀 Creating goal with current_amount:', parseInt(goalData.amount_saved));
+      
+      console.log('🚀 Creating goal with payload:', payload);
+      console.log('🚀 Target amount (parsed):', targetAmount);
+      console.log('🚀 Current amount (parsed):', currentAmount);
       
       const response = await fetch('https://fin-advisor-ashokkumar5.replit.app/create_goal', {
         method: 'POST',
